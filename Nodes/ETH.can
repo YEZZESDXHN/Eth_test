@@ -1,0 +1,98 @@
+/*@!Encoding:936*/
+includes
+{
+  
+}
+
+variables
+{
+  
+}
+void SendARPRequest_IPv4(char sMAC_str[],char sIPv4_str[], char dIPv4_str[])
+{
+    ethernetPacket pkt;
+    pkt.arp.Init();
+//    pkt.type=0x0806;//arp
+    pkt.source=EthGetMacAddressAsNumber(sMAC_str);
+    pkt.destination=EthGetMacAddressAsNumber("FF:FF:FF:FF:FF:FF");//¹ã²¥
+//    pkt.SetVlanId(10);
+    
+    
+    pkt.arp.hwType=1;
+    pkt.arp.protType=0x0800;
+    pkt.arp.hwSize=6;
+    pkt.arp.protSize=4;//IPv4
+    pkt.arp.operation=1;
+    pkt.arp.hwSourceAddr=EthGetMacAddressAsNumber(sMAC_str);
+    pkt.arp.protSourceAddr=IpGetAddressAsNumber(sIPv4_str);
+    pkt.arp.hwDestinationAddr=EthGetMacAddressAsNumber("00:00:00:00:00:00");
+    pkt.arp.protDestinationAddr=IpGetAddressAsNumber(dIPv4_str);
+    pkt.CompletePacket();
+    output( pkt );
+}
+
+/// <SendETHPacket/SendICMP>
+void SendICMPv4(char sMAC_str[],char sIPv4_str[], char dIPv4_str[])
+{
+    ethernetPacket pkt;
+    pkt.icmpv4.Init();
+//    pkt.type=0x0806;//arp
+    pkt.source=EthGetMacAddressAsNumber(sMAC_str);
+    pkt.destination=EthGetMacAddressAsNumber("02:dF:53:00:00:20");
+    pkt.ipv4.destination=IpGetAddressAsNumber(dIPv4_str);
+    pkt.ipv4.source=IpGetAddressAsNumber(sIPv4_str);
+    pkt.icmpv4.type=0x08;
+    pkt.CompletePacket();
+    output( pkt );
+    
+    
+    
+    
+    output( pkt );
+}
+
+/// <SendETHPacket/SendTCP>
+void SendTCP_IPV4(char sMAC_str[],char sIPv4_str[], char dIPv4_str[])
+{
+    ethernetPacket pkt;
+    pkt.tcp.Init();
+//    pkt.type=0x0806;//arp
+    pkt.source=EthGetMacAddressAsNumber(sMAC_str);
+    pkt.destination=EthGetMacAddressAsNumber("02:dF:53:00:00:20");
+    pkt.ipv4.destination=IpGetAddressAsNumber(dIPv4_str);
+    pkt.ipv4.source=IpGetAddressAsNumber(sIPv4_str);
+    
+    pkt.tcp.source=13490;
+    pkt.tcp.destination=13490;
+    
+    pkt.tcp.sequence=100;
+//    pkt.tcp.
+    
+    pkt.CompletePacket();
+    output( pkt );
+    
+    
+    
+    
+    output( pkt );
+}
+
+
+on key 'e'
+{
+    SendTCP_IPV4("20:00:00:00:00:01","172.16.104.50","172.16.104.60");
+//    ethernetPacket pkt;
+//    // initialize packet with IPv4 and UDP protocols
+//    pkt.udp.Init();
+//    // set IPv4 addresses
+//    pkt.ipv4.source.ParseAddress( "192.168.1.1" );
+//    pkt.ipv4.destination.ParseAddress ( "192.168.1.255" );
+//    // set UDP ports
+//    pkt.udp.source = 40001;
+//    pkt.udp.destination = 40002;
+//    // set UDP payload
+//    pkt.udp.SetData( 0, "Hello", 5 );
+//    // calculate UDP and IPv4 checksum and send Ethernet packet
+//    pkt.CompletePacket();
+//    output( pkt );
+}

@@ -1,0 +1,340 @@
+/*@!Encoding:936*/
+includes
+{
+  
+}
+
+variables
+{
+  
+}
+
+//设置再哪个总线，等待报文
+long SetListenBus(char listen_bus[])
+{
+  dword busContext;
+  dword retVal;
+  //Listen CAN1
+  busContext = GetBusNameContext(listen_bus);
+  //busContext = GetBusNameContext(eCAN,1);
+  retVal =  SetBusContext(busContext);
+  return retVal;
+}
+
+
+
+
+/// <GetEthPacket>
+long TestWaitForEth_ETH(char bus[], ethernetPacket* pkt,qword sMAC, qword dMAC, word vlanID,  word etherType,dword flags, dword aTimeout)
+{
+    long ret;
+    SetListenBus(bus);
+    
+    ret=TestWaitForEthernetPacket(sMAC,dMAC,vlanID,etherType,flags,aTimeout);
+    if(ret==1)
+    {
+        
+    }
+    else if(ret==0)
+    {
+        testStepFail("Resume due to timeout");
+        return 0;
+    }
+    else if(ret==-2)
+    {
+        testStepFail("Resume due to constraint violation");
+        return 0;
+    }
+    else if(ret==-1)
+    {
+        testStepFail("General error, for example, functionality is not available");
+        return 0;
+    }
+    
+    ret=testGetWaitEthernetPacketData(pkt);
+    if(ret==0)
+    {
+        testStepPass("get ETH Packet success");
+        return 1;
+    }
+    else
+    {
+        testStepFail("get ETH Packet failed");
+        return 0;
+    }
+    
+}
+
+/// <GetEthPacket>
+long TestWaitForEth_IPv4(char bus[], ethernetPacket* pkt,char sIPv4_str[], char dIPv4_str[], dword protocol, dword sPort, dword dPort, dword flags, dword aTimeout)
+{
+    long ret;
+    dword result;
+    SetListenBus(bus);
+    
+    
+    ret=TestWaitForEthernetPacket(IpGetAddressAsNumber(sIPv4_str), IpGetAddressAsNumber(dIPv4_str), protocol, sPort, dPort, flags, aTimeout);
+    if(ret==1)
+    {
+        
+    }
+    else if(ret==0)
+    {
+        testStepFail("Resume due to timeout");
+        return 0;
+    }
+    else if(ret==-2)
+    {
+        testStepFail("Resume due to constraint violation");
+        return 0;
+    }
+    else if(ret==-1)
+    {
+        testStepFail("General error, for example, functionality is not available");
+        return 0;
+    }
+    
+    ret=testGetWaitEthernetPacketData(pkt);
+    if(ret==0)
+    {
+        testStepPass("get ETH Packet success");
+        return 1;
+    }
+    else
+    {
+        testStepFail("get ETH Packet failed");
+        return 0;
+    }
+    
+}
+
+/// <GetEthPacket>
+long TestWaitForEth_IPv6(char bus[], ethernetPacket* pkt,char sIPv6_str[], char dIPv6_str[], dword protocol, dword sPort, dword dPort, dword flags, dword aTimeout)
+{
+    long ret;
+    byte sIPv6[16], dIPv6[16];
+    dword result;
+    
+    result = IpGetAddressAsArray( sIPv6_str, sIPv6);
+    if (result != 0)
+    {
+        testStepFail("sIPv6 %s is wrong",sIPv6_str);
+        return 0;
+    }
+    
+    result = IpGetAddressAsArray( dIPv6_str, dIPv6);
+    if (result != 0)
+    {
+        testStepFail("dIPv6 %s is wrong",dIPv6_str);
+        return 0;
+    }
+    
+    
+    SetListenBus(bus);
+    
+    ret=TestWaitForEthernetPacket(sIPv6, dIPv6, protocol, sPort, dPort, flags, aTimeout);
+    if(ret==1)
+    {
+        
+    }
+    else if(ret==0)
+    {
+        testStepFail("Resume due to timeout");
+        return 0;
+    }
+    else if(ret==-2)
+    {
+        testStepFail("Resume due to constraint violation");
+        return 0;
+    }
+    else if(ret==-1)
+    {
+        testStepFail("General error, for example, functionality is not available");
+        return 0;
+    }
+    
+    ret=testGetWaitEthernetPacketData(pkt);
+    if(ret==0)
+    {
+        testStepPass("get ETH Packet success");
+        return 1;
+    }
+    else
+    {
+        testStepFail("get ETH Packet failed");
+        return 0;
+    }
+    
+}
+
+
+/// <GetEthPacket>
+long TestWaitForEth_ETH_IPv4(char bus[], ethernetPacket* pkt,qword sMAC, qword dMAC, word vlanID, word etherType, char sIPv4_str[], char dIPv4_str[], dword protocol, dword sPort, dword dPort, dword flags, dword aTimeout)
+{
+    long ret;
+    dword result;
+    SetListenBus(bus);
+    
+    
+    ret=TestWaitForEthernetPacket(sMAC, dMAC, vlanID, etherType, IpGetAddressAsNumber(sIPv4_str), IpGetAddressAsNumber(dIPv4_str), protocol, sPort, dPort, flags, aTimeout);
+    if(ret==1)
+    {
+        
+    }
+    else if(ret==0)
+    {
+        testStepFail("Resume due to timeout");
+        return 0;
+    }
+    else if(ret==-2)
+    {
+        testStepFail("Resume due to constraint violation");
+        return 0;
+    }
+    else if(ret==-1)
+    {
+        testStepFail("General error, for example, functionality is not available");
+        return 0;
+    }
+    
+    ret=testGetWaitEthernetPacketData(pkt);
+    if(ret==0)
+    {
+        testStepPass("get ETH Packet success");
+        return 1;
+    }
+    else
+    {
+        testStepFail("get ETH Packet failed");
+        return 0;
+    }
+    
+}
+
+/// <GetEthPacket>
+long TestWaitForEth_ETH_IPv6(char bus[], ethernetPacket* pkt,qword sMAC, qword dMAC, word vlanID, word etherType, char sIPv6_str[], char dIPv6_str[], dword protocol, dword sPort, dword dPort, dword flags, dword aTimeout)
+{
+    long ret;
+    dword result;
+    byte sIPv6[16], dIPv6[16];
+    SetListenBus(bus);
+    
+    result = IpGetAddressAsArray( sIPv6_str, sIPv6);
+    if (result != 0)
+    {
+        testStepFail("sIPv6 %s is wrong",sIPv6_str);
+        return 0;
+    }
+    
+    result = IpGetAddressAsArray( dIPv6_str, dIPv6);
+    if (result != 0)
+    {
+        testStepFail("dIPv6 %s is wrong",dIPv6_str);
+        return 0;
+    }
+    
+    ret=TestWaitForEthernetPacket(sMAC, dMAC, vlanID, etherType, sIPv6, dIPv6, protocol, sPort, dPort, flags, aTimeout);
+    if(ret==1)
+    {
+        
+    }
+    else if(ret==0)
+    {
+        testStepFail("Resume due to timeout");
+        return 0;
+    }
+    else if(ret==-2)
+    {
+        testStepFail("Resume due to constraint violation");
+        return 0;
+    }
+    else if(ret==-1)
+    {
+        testStepFail("General error, for example, functionality is not available");
+        return 0;
+    }
+    
+    ret=testGetWaitEthernetPacketData(pkt);
+    if(ret==0)
+    {
+        testStepPass("get ETH Packet success");
+        return 1;
+    }
+    else
+    {
+        testStepFail("get ETH Packet failed");
+        return 0;
+    }
+    
+}
+
+
+
+/// <SendETHPacket>
+/// <SendETHPacket/SendARP>
+void SendARPRequest_IPv4(char sMAC_str[],char sIPv4_str[], char dIPv4_str[])
+{
+    ethernetPacket pkt;
+    pkt.type=0x0806;//arp
+    pkt.source=EthGetMacAddressAsNumber(sMAC_str);
+    pkt.destination=EthGetMacAddressAsNumber("FF:FF:FF:FF:FF:FF");
+    pkt.arp.Init();
+    pkt.arp.hwType=1;//ETH 10Mb
+    pkt.arp.protType=0x0800;// IPv4
+    pkt.arp.hwSize=6;
+    pkt.arp.protSize=4;//IPv4
+    pkt.arp.operation=1;
+    pkt.arp.hwSourceAddr=EthGetMacAddressAsNumber(sMAC_str);
+    pkt.arp.protSourceAddr=IpGetAddressAsNumber(sIPv4_str);
+    pkt.arp.hwDestinationAddr=EthGetMacAddressAsNumber("00:00:00:00:00:00");
+    pkt.arp.protDestinationAddr=IpGetAddressAsNumber(dIPv4_str);
+    pkt.CompletePacket();
+    output( pkt );
+}
+
+/// <SendETHPacket/SendICMP>
+void SendICMPv4(char sMAC_str[],char sIPv4_str[], char dIPv4_str[])
+{
+    ethernetPacket pkt;
+    pkt.type=0x0806;//arp
+    pkt.source=EthGetMacAddressAsNumber(sMAC_str);
+    pkt.destination=EthGetMacAddressAsNumber("FF:FF:FF:FF:FF:FF");
+    pkt.icmpv4.Init();
+    
+    
+    pkt.CompletePacket();
+    
+    
+    
+    output( pkt );
+}
+
+
+
+void MainTest ()
+{
+    ethernetPacket pkt;
+    long ret;
+    
+    
+    SetListenBus("Ethernet1");
+    
+    
+    write("start");
+    ret=TestWaitForEthernetPacket(IpGetAddressAsNumber("192.168.1.1"), IpGetAddressAsNumber("192.168.1.255"), 17, 0, 0, 0, 10000);
+    
+    write("ret=%d",ret);
+    if(ret==1)
+    {
+        write("Resume due to event occurred");
+        ret=testGetWaitEthernetPacketData(pkt);
+        if(ret==0)
+        {
+            write("Data access successful");
+        }
+    }
+    
+    
+    
+}
+
