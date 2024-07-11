@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<systemvariables version="4">
+  <namespace name="" comment="" interface="">
+    <namespace name="Client" comment="" interface="">
+      <variable anlyzLocal="2" readOnly="false" valueSequence="false" unit="" name="Close" comment="Close socket" bitcount="32" isSigned="true" encoding="65001" type="int" minValue="0" minValuePhys="0" maxValue="1" maxValuePhys="1" />
+      <variable anlyzLocal="2" readOnly="false" valueSequence="false" unit="" name="Connect" comment="Connect socket to server via TCP" bitcount="32" isSigned="true" encoding="65001" type="int" minValue="0" minValuePhys="0" maxValue="1" maxValuePhys="1" />
+      <variable anlyzLocal="2" readOnly="false" valueSequence="false" unit="" name="RxText" comment="Text which was received from server by TCP" bitcount="0" isSigned="true" encoding="65001" type="string" />
+    </namespace>
+    <namespace name="Server" comment="" interface="">
+      <variable anlyzLocal="2" readOnly="false" valueSequence="false" unit="" name="Close" comment="Close socket" bitcount="32" isSigned="true" encoding="65001" type="int" />
+      <variable anlyzLocal="2" readOnly="false" valueSequence="false" unit="" name="Listen" comment="Start listening on the TCP port" bitcount="32" isSigned="true" encoding="65001" type="int" minValue="0" minValuePhys="0" maxValue="1" maxValuePhys="1" />
+      <variable anlyzLocal="2" readOnly="false" valueSequence="false" unit="" name="TxButton" comment="Trigger sending of data from server to client" bitcount="32" isSigned="true" encoding="65001" type="int" startValue="0" minValue="0" minValuePhys="0" maxValue="1" maxValuePhys="1" />
+      <variable anlyzLocal="2" readOnly="false" valueSequence="false" unit="" name="TxText" comment="Text which is sent from server to client." bitcount="0" isSigned="true" encoding="65001" type="string" />
+    </namespace>
+  </namespace>
+</systemvariables>

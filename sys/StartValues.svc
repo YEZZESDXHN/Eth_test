@@ -1,0 +1,5 @@
+0,1,Start values,[%C]-[%C]
+0,1,SysVar::Server::Listen,0,[%C]Server starts listening on measurement start[%C]
+0,1,SysVar::Client::Connect,0,[%C]Connect to server on measurement start[%C]
+0,1,SysVar::Server::TxText,Hello World!,[%C]-[%C]
+0,1,SysVar::Client::RxText,,[%C]Clear RX text[%C]
