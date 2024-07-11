@@ -6,6 +6,28 @@ includes
 
 variables
 {
+    struct eth_header
+    {
+        qword dMAC;
+        qword sMAC;
+        word vlanID;
+        word etherType;
+    };
+    
+    struct ipv4_header
+    {
+        char sIPv4Addr_str[16];
+        char dIPv4Addr_str[16];
+        dword protocol;
+        
+    };
+    
+    struct ipv6_header
+    {
+        char sIPv6Addr_str[40];
+        char dIPv6Addr_str[40];
+        dword protocol;
+    };
   
 }
 
@@ -25,7 +47,7 @@ long SetListenBus(char listen_bus[])
 
 
 /// <GetEthPacket>
-long TestWaitForEth_ETH(char bus[], ethernetPacket* pkt,qword sMAC, qword dMAC, word vlanID,  word etherType,dword flags, dword aTimeout)
+long TestWaitForEth_ETH(char bus[], ethernetPacket* pkt,qword sMAC, qword dMAC, word vlanID, word etherType,dword flags, dword aTimeout)
 {
     long ret;
     SetListenBus(bus);
@@ -272,18 +294,20 @@ long TestWaitForEth_ETH_IPv6(char bus[], ethernetPacket* pkt,qword sMAC, qword d
 
 /// <SendETHPacket>
 /// <SendETHPacket/SendARP>
-void SendARPRequest_IPv4(char sMAC_str[],char sIPv4_str[], char dIPv4_str[])
+void SendARPRequest_IPv4(char sMAC_str[],word vlanId,char sIPv4_str[], char dIPv4_str[])
 {
     ethernetPacket pkt;
-    pkt.type=0x0806;//arp
+    pkt.arp.Init();
+//    pkt.type=0x0806;//arp
     pkt.source=EthGetMacAddressAsNumber(sMAC_str);
     pkt.destination=EthGetMacAddressAsNumber("FF:FF:FF:FF:FF:FF");
-    pkt.arp.Init();
+    pkt.SetVlanId(vlanId);
+    
     pkt.arp.hwType=1;//ETH 10Mb
     pkt.arp.protType=0x0800;// IPv4
     pkt.arp.hwSize=6;
     pkt.arp.protSize=4;//IPv4
-    pkt.arp.operation=1;
+    pkt.arp.operation=1;//request
     pkt.arp.hwSourceAddr=EthGetMacAddressAsNumber(sMAC_str);
     pkt.arp.protSourceAddr=IpGetAddressAsNumber(sIPv4_str);
     pkt.arp.hwDestinationAddr=EthGetMacAddressAsNumber("00:00:00:00:00:00");
@@ -293,19 +317,106 @@ void SendARPRequest_IPv4(char sMAC_str[],char sIPv4_str[], char dIPv4_str[])
 }
 
 /// <SendETHPacket/SendICMP>
-void SendICMPv4(char sMAC_str[],char sIPv4_str[], char dIPv4_str[])
+void SendICMPv4_EchoRequest(char sMAC_str[],char dMAC_str[],word vlanId,char sIPv4_str[], char dIPv4_str[])
 {
     ethernetPacket pkt;
-    pkt.type=0x0806;//arp
-    pkt.source=EthGetMacAddressAsNumber(sMAC_str);
-    pkt.destination=EthGetMacAddressAsNumber("FF:FF:FF:FF:FF:FF");
     pkt.icmpv4.Init();
-    
+//    pkt.type=0x0806;//arp
+    pkt.source=EthGetMacAddressAsNumber(sMAC_str);
+    pkt.destination=EthGetMacAddressAsNumber(dMAC_str);
+    pkt.SetVlanId(vlanId);
+    pkt.ipv4.source=IpGetAddressAsNumber(sIPv4_str);
+    pkt.ipv4.destination=IpGetAddressAsNumber(dIPv4_str);
+    pkt.icmpv4.type=0x08;
     
     pkt.CompletePacket();
     
+    output( pkt );
+}
+
+
+
+void SendTCP_SYNC(char sMAC_str[],char dMAC_str[],word vlanId,char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort,dword sequence,dword ackNumber,word window)
+{
+    ethernetPacket pkt;
+    pkt.tcp.Init();
+    pkt.source=EthGetMacAddressAsNumber(sMAC_str);
+    pkt.destination=EthGetMacAddressAsNumber(dMAC_str);
+    pkt.SetVlanId(vlanId);
+    pkt.ipv4.source=IpGetAddressAsNumber(sIPv4_str);
+    pkt.ipv4.destination=IpGetAddressAsNumber(dIPv4_str);
     
+    pkt.tcp.source=sPort;
+    pkt.tcp.destination=dPort;
+    pkt.tcp.sequence=sequence;
+    pkt.tcp.ackNumber=ackNumber;
+    pkt.tcp.flags=0x2;//SYNC
+    pkt.tcp.window=window;
     
+    pkt.CompletePacket();
+    output( pkt );
+}
+
+void SendTCP_ACK_SYNC(char sMAC_str[],char dMAC_str[],word vlanId,char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort,dword sequence,dword ackNumber,word window)
+{
+    ethernetPacket pkt;
+    pkt.tcp.Init();
+    pkt.source=EthGetMacAddressAsNumber(sMAC_str);
+    pkt.destination=EthGetMacAddressAsNumber(dMAC_str);
+    pkt.SetVlanId(vlanId);
+    pkt.ipv4.source=IpGetAddressAsNumber(sIPv4_str);
+    pkt.ipv4.destination=IpGetAddressAsNumber(dIPv4_str);
+    
+    pkt.tcp.source=sPort;
+    pkt.tcp.destination=dPort;
+    pkt.tcp.sequence=sequence;
+    pkt.tcp.ackNumber=ackNumber;
+    pkt.tcp.flags=0x12;//ACK,SYNC
+    pkt.tcp.window=window;
+    
+    pkt.CompletePacket();
+    output( pkt );
+}
+
+void SendTCP_ACK(char sMAC_str[],char dMAC_str[],word vlanId,char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort,dword sequence,dword ackNumber,word window)
+{
+    ethernetPacket pkt;
+    pkt.tcp.Init();
+    pkt.source=EthGetMacAddressAsNumber(sMAC_str);
+    pkt.destination=EthGetMacAddressAsNumber(dMAC_str);
+    pkt.SetVlanId(vlanId);
+    pkt.ipv4.source=IpGetAddressAsNumber(sIPv4_str);
+    pkt.ipv4.destination=IpGetAddressAsNumber(dIPv4_str);
+    
+    pkt.tcp.source=sPort;
+    pkt.tcp.destination=dPort;
+    pkt.tcp.sequence=sequence;
+    pkt.tcp.ackNumber=ackNumber;
+    pkt.tcp.flags=0x10;//ACK,SYNC
+    pkt.tcp.window=window;
+    
+    pkt.CompletePacket();
+    output( pkt );
+}
+
+void SendTCP_ACK_PSH(char sMAC_str[],char dMAC_str[],word vlanId,char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort,dword sequence,dword ackNumber,word window)
+{
+    ethernetPacket pkt;
+    pkt.tcp.Init();
+    pkt.source=EthGetMacAddressAsNumber(sMAC_str);
+    pkt.destination=EthGetMacAddressAsNumber(dMAC_str);
+    pkt.SetVlanId(vlanId);
+    pkt.ipv4.source=IpGetAddressAsNumber(sIPv4_str);
+    pkt.ipv4.destination=IpGetAddressAsNumber(dIPv4_str);
+    
+    pkt.tcp.source=sPort;
+    pkt.tcp.destination=dPort;
+    pkt.tcp.sequence=sequence;
+    pkt.tcp.ackNumber=ackNumber;
+    pkt.tcp.flags=0x18;//ACK,SYNC
+    pkt.tcp.window=window;
+    
+    pkt.CompletePacket();
     output( pkt );
 }
 

@@ -8,14 +8,14 @@ variables
 {
   
 }
-void SendARPRequest_IPv4(char sMAC_str[],char sIPv4_str[], char dIPv4_str[])
+void SendARPRequest_IPv4(char sMAC_str[],char sIPv4_str[], word vlanId,char dIPv4_str[])
 {
     ethernetPacket pkt;
     pkt.arp.Init();
 //    pkt.type=0x0806;//arp
     pkt.source=EthGetMacAddressAsNumber(sMAC_str);
     pkt.destination=EthGetMacAddressAsNumber("FF:FF:FF:FF:FF:FF");//¹ã²¥
-//    pkt.SetVlanId(10);
+    pkt.SetVlanId(vlanId);
     
     
     pkt.arp.hwType=1;
@@ -80,7 +80,7 @@ void SendTCP_IPV4(char sMAC_str[],char sIPv4_str[], char dIPv4_str[])
 
 on key 'e'
 {
-    SendTCP_IPV4("20:00:00:00:00:01","172.16.104.50","172.16.104.60");
+    SendICMPv4("20:00:00:00:00:01","172.16.104.50","172.16.104.60");
 //    ethernetPacket pkt;
 //    // initialize packet with IPv4 and UDP protocols
 //    pkt.udp.Init();
