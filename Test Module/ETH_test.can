@@ -131,6 +131,94 @@ long TestWaitForEth_IPv4(char bus[], ethernetPacket* pkt,char sIPv4_str[], char 
 }
 
 /// <GetEthPacket>
+long TestWaitForEth_TCP_IPv4(char bus[], ethernetPacket* pkt,char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort, dword flags, dword aTimeout)
+{
+    long ret;
+    dword result;
+    const dword protocol=6;//TCP
+    SetListenBus(bus);
+    
+    
+    ret=TestWaitForEthernetPacket(IpGetAddressAsNumber(sIPv4_str), IpGetAddressAsNumber(dIPv4_str), protocol, sPort, dPort, flags, aTimeout);
+    if(ret==1)
+    {
+        
+    }
+    else if(ret==0)
+    {
+        testStepFail("Resume due to timeout");
+        return 0;
+    }
+    else if(ret==-2)
+    {
+        testStepFail("Resume due to constraint violation");
+        return 0;
+    }
+    else if(ret==-1)
+    {
+        testStepFail("General error, for example, functionality is not available");
+        return 0;
+    }
+    
+    ret=testGetWaitEthernetPacketData(pkt);
+    if(ret==0)
+    {
+        testStepPass("get ETH Packet success");
+        return 1;
+    }
+    else
+    {
+        testStepFail("get ETH Packet failed");
+        return 0;
+    }
+    
+}
+
+/// <GetEthPacket>
+long TestWaitForEth_UDP_IPv4(char bus[], ethernetPacket* pkt,char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort, dword flags, dword aTimeout)
+{
+    long ret;
+    dword result;
+    const dword protocol=17;//TCP
+    SetListenBus(bus);
+    
+    
+    ret=TestWaitForEthernetPacket(IpGetAddressAsNumber(sIPv4_str), IpGetAddressAsNumber(dIPv4_str), protocol, sPort, dPort, flags, aTimeout);
+    if(ret==1)
+    {
+        
+    }
+    else if(ret==0)
+    {
+        testStepFail("Resume due to timeout");
+        return 0;
+    }
+    else if(ret==-2)
+    {
+        testStepFail("Resume due to constraint violation");
+        return 0;
+    }
+    else if(ret==-1)
+    {
+        testStepFail("General error, for example, functionality is not available");
+        return 0;
+    }
+    
+    ret=testGetWaitEthernetPacketData(pkt);
+    if(ret==0)
+    {
+        testStepPass("get ETH Packet success");
+        return 1;
+    }
+    else
+    {
+        testStepFail("get ETH Packet failed");
+        return 0;
+    }
+    
+}
+
+/// <GetEthPacket>
 long TestWaitForEth_IPv6(char bus[], ethernetPacket* pkt,char sIPv6_str[], char dIPv6_str[], dword protocol, dword sPort, dword dPort, dword flags, dword aTimeout)
 {
     long ret;
@@ -294,14 +382,25 @@ long TestWaitForEth_ETH_IPv6(char bus[], ethernetPacket* pkt,qword sMAC, qword d
 
 /// <SendETHPacket>
 /// <SendETHPacket/SendARP>
-void SendARPRequest_IPv4(char sMAC_str[],word vlanId,char sIPv4_str[], char dIPv4_str[])
+void SendARPRequest_IPv4(
+    char sMAC_str[],
+    word vlanId,
+    char sIPv4_str[],
+    char dIPv4_str[])
 {
     ethernetPacket pkt;
     pkt.arp.Init();
 //    pkt.type=0x0806;//arp
     pkt.source=EthGetMacAddressAsNumber(sMAC_str);
     pkt.destination=EthGetMacAddressAsNumber("FF:FF:FF:FF:FF:FF");
-    pkt.SetVlanId(vlanId);
+    if(vlanId==0xffff)
+    {
+        
+    }
+    else
+    {
+        pkt.SetVlanId(vlanId);
+    }
     
     pkt.arp.hwType=1;//ETH 10Mb
     pkt.arp.protType=0x0800;// IPv4
@@ -317,14 +416,26 @@ void SendARPRequest_IPv4(char sMAC_str[],word vlanId,char sIPv4_str[], char dIPv
 }
 
 /// <SendETHPacket/SendICMP>
-void SendICMPv4_EchoRequest(char sMAC_str[],char dMAC_str[],word vlanId,char sIPv4_str[], char dIPv4_str[])
+void SendICMPv4_EchoRequest(
+    char sMAC_str[],
+    char dMAC_str[],
+    word vlanId,
+    char sIPv4_str[],
+    char dIPv4_str[])
 {
     ethernetPacket pkt;
     pkt.icmpv4.Init();
 //    pkt.type=0x0806;//arp
     pkt.source=EthGetMacAddressAsNumber(sMAC_str);
     pkt.destination=EthGetMacAddressAsNumber(dMAC_str);
-    pkt.SetVlanId(vlanId);
+    if(vlanId==0xffff)
+    {
+        
+    }
+    else
+    {
+        pkt.SetVlanId(vlanId);
+    }
     pkt.ipv4.source=IpGetAddressAsNumber(sIPv4_str);
     pkt.ipv4.destination=IpGetAddressAsNumber(dIPv4_str);
     pkt.icmpv4.type=0x08;
@@ -335,14 +446,32 @@ void SendICMPv4_EchoRequest(char sMAC_str[],char dMAC_str[],word vlanId,char sIP
 }
 
 
-
-void SendTCP_SYNC(char sMAC_str[],char dMAC_str[],word vlanId,char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort,dword sequence,dword ackNumber,word window)
+/// <SendETHPacket>
+/// <SendETHPacket/SendTCP>
+void SendTCP_SYNC(
+    char sMAC_str[],
+    char dMAC_str[],
+    word vlanId,
+    char sIPv4_str[],
+    char dIPv4_str[],
+    dword sPort,
+    dword dPort,
+    dword sequence,
+    dword ackNumber,
+    word window)
 {
     ethernetPacket pkt;
     pkt.tcp.Init();
     pkt.source=EthGetMacAddressAsNumber(sMAC_str);
     pkt.destination=EthGetMacAddressAsNumber(dMAC_str);
-    pkt.SetVlanId(vlanId);
+    if(vlanId==0xffff)
+    {
+        
+    }
+    else
+    {
+        pkt.SetVlanId(vlanId);
+    }
     pkt.ipv4.source=IpGetAddressAsNumber(sIPv4_str);
     pkt.ipv4.destination=IpGetAddressAsNumber(dIPv4_str);
     
@@ -357,13 +486,33 @@ void SendTCP_SYNC(char sMAC_str[],char dMAC_str[],word vlanId,char sIPv4_str[], 
     output( pkt );
 }
 
-void SendTCP_ACK_SYNC(char sMAC_str[],char dMAC_str[],word vlanId,char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort,dword sequence,dword ackNumber,word window)
+
+/// <SendETHPacket>
+/// <SendETHPacket/SendTCP>
+void SendTCP_ACK_SYNC(
+    char sMAC_str[],
+    char dMAC_str[],
+    word vlanId,
+    char sIPv4_str[],
+    char dIPv4_str[],
+    dword sPort,
+    dword dPort,
+    dword sequence,
+    dword ackNumber,
+    word window)
 {
     ethernetPacket pkt;
     pkt.tcp.Init();
     pkt.source=EthGetMacAddressAsNumber(sMAC_str);
     pkt.destination=EthGetMacAddressAsNumber(dMAC_str);
-    pkt.SetVlanId(vlanId);
+    if(vlanId==0xffff)
+    {
+        
+    }
+    else
+    {
+        pkt.SetVlanId(vlanId);
+    }
     pkt.ipv4.source=IpGetAddressAsNumber(sIPv4_str);
     pkt.ipv4.destination=IpGetAddressAsNumber(dIPv4_str);
     
@@ -378,13 +527,32 @@ void SendTCP_ACK_SYNC(char sMAC_str[],char dMAC_str[],word vlanId,char sIPv4_str
     output( pkt );
 }
 
-void SendTCP_ACK(char sMAC_str[],char dMAC_str[],word vlanId,char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort,dword sequence,dword ackNumber,word window)
+/// <SendETHPacket>
+/// <SendETHPacket/SendTCP>
+void SendTCP_ACK(
+    char sMAC_str[],
+    char dMAC_str[],
+    word vlanId,
+    char sIPv4_str[],
+    char dIPv4_str[],
+    dword sPort,
+    dword dPort,
+    dword sequence,
+    dword ackNumber,
+    word window)
 {
     ethernetPacket pkt;
     pkt.tcp.Init();
     pkt.source=EthGetMacAddressAsNumber(sMAC_str);
     pkt.destination=EthGetMacAddressAsNumber(dMAC_str);
-    pkt.SetVlanId(vlanId);
+    if(vlanId==0xffff)
+    {
+        
+    }
+    else
+    {
+        pkt.SetVlanId(vlanId);
+    }
     pkt.ipv4.source=IpGetAddressAsNumber(sIPv4_str);
     pkt.ipv4.destination=IpGetAddressAsNumber(dIPv4_str);
     
@@ -399,13 +567,32 @@ void SendTCP_ACK(char sMAC_str[],char dMAC_str[],word vlanId,char sIPv4_str[], c
     output( pkt );
 }
 
-void SendTCP_ACK_PSH(char sMAC_str[],char dMAC_str[],word vlanId,char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort,dword sequence,dword ackNumber,word window)
+/// <SendETHPacket>
+/// <SendETHPacket/SendTCP>
+void SendTCP_ACK_PSH(
+    char sMAC_str[],
+    char dMAC_str[],
+    word vlanId,
+    char sIPv4_str[],
+    char dIPv4_str[],
+    dword sPort,
+    dword dPort,
+    dword sequence,
+    dword ackNumber,
+    word window)
 {
     ethernetPacket pkt;
     pkt.tcp.Init();
     pkt.source=EthGetMacAddressAsNumber(sMAC_str);
     pkt.destination=EthGetMacAddressAsNumber(dMAC_str);
-    pkt.SetVlanId(vlanId);
+    if(vlanId==0xffff)
+    {
+        
+    }
+    else
+    {
+        pkt.SetVlanId(vlanId);
+    }
     pkt.ipv4.source=IpGetAddressAsNumber(sIPv4_str);
     pkt.ipv4.destination=IpGetAddressAsNumber(dIPv4_str);
     
@@ -419,32 +606,162 @@ void SendTCP_ACK_PSH(char sMAC_str[],char dMAC_str[],word vlanId,char sIPv4_str[
     pkt.CompletePacket();
     output( pkt );
 }
+/// <SendETHPacket>
+/// <SendETHPacket/SendUDP>
+void SendUDP(
+    char sMAC_str[],
+    char dMAC_str[],
+    word vlanId,
+    char sIPv4_str[], 
+    char dIPv4_str[], 
+    dword sPort, 
+    dword dPort,
+    byte payload[])
+{
+    ethernetPacket pkt;
+    pkt.udp.Init();
+    pkt.source=EthGetMacAddressAsNumber(sMAC_str);
+    pkt.destination=EthGetMacAddressAsNumber(dMAC_str);
+    if(vlanId==0xffff)
+    {
+        
+    }
+    else
+    {
+        pkt.SetVlanId(vlanId);
+    }
+    pkt.ipv4.source=IpGetAddressAsNumber(sIPv4_str);
+    pkt.ipv4.destination=IpGetAddressAsNumber(dIPv4_str);
+    
+    pkt.udp.source=sPort;
+    pkt.udp.destination=dPort;
+    pkt.udp.SetData(payload,elCount(payload));
+    
+    pkt.CompletePacket();
+    output( pkt );
+    
+}
+
+/// <SendETHPacket>
+/// <SendETHPacket/SendSomeIP>
+void SendSomeIP_FFMethod()
+{
+    ethernetPacket pkt;
+    pkt.udp.Init();
+    
+}
+
+/// <SendETHPacket>
+/// <SendETHPacket/SendSomeIP>
+void SendSomeIP_RRMethod(
+    char sMAC_str[],
+    char dMAC_str[],
+    word vlanId,//0xffff:不设置vlan
+    char sIPv4_str[], 
+    char dIPv4_str[], 
+    dword sPort, 
+    dword dPort,
+    dword MessageID,//Service ID+Method ID
+    dword RequestID,//Client ID+Session ID
+    byte MessageType,
+    byte payload[])
+{
+    ethernetPacket pkt;
+    byte someip_header[16];
+    dword payload_len;
+    
+    payload_len=elCount(payload);
+    
+    
+    someip_header[0]=(MessageID>>24) & 0xff;
+    someip_header[1]=(MessageID>>16) & 0xff;
+    someip_header[2]=(MessageID>>8) & 0xff;
+    someip_header[3]=(MessageID   ) & 0xff;
+    
+    someip_header[4]=((payload_len+8)>>24) & 0xff;
+    someip_header[5]=((payload_len+8)>>16) & 0xff;
+    someip_header[6]=((payload_len+8)>>8) & 0xff;
+    someip_header[7]=((payload_len+8)   ) & 0xff;
+    
+    someip_header[8]=(RequestID>>24) & 0xff;
+    someip_header[9]=(RequestID>>16) & 0xff;
+    someip_header[10]=(RequestID>>8) & 0xff;
+    someip_header[11]=(RequestID   ) & 0xff;
+    
+    someip_header[12]=1;//Protocol Version
+    someip_header[13]=1;//Interface Version
+    someip_header[14]=MessageType;
+    someip_header[15]=0;//只在REPONSE和ERROR中用到，其他Message Type不生效，填0
+    
+    
+    
+    
+    pkt.someip.Init();
+    pkt.source=EthGetMacAddressAsNumber(sMAC_str);
+    pkt.destination=EthGetMacAddressAsNumber(dMAC_str);
+    if(vlanId==0xffff)
+    {
+        
+    }
+    else
+    {
+        pkt.SetVlanId(vlanId);
+    }
+    
+    pkt.ipv4.source=IpGetAddressAsNumber(sIPv4_str);
+    pkt.ipv4.destination=IpGetAddressAsNumber(dIPv4_str);
+    
+    pkt.udp.source=sPort;
+    pkt.udp.destination=dPort;
+    
+    pkt.udp.SetData(someip_header,16);
+    pkt.udp.SetData(16,payload,payload_len);//someip payload
+    
+    
+    pkt.CompletePacket();
+    output( pkt );
+}
+
+/// <SendETHPacket>
+/// <SendETHPacket/SendSomeIP>
+void SendSomeIP_Field()
+{
+    
+}
+
+/// <SendETHPacket>
+/// <SendETHPacket/SendSomeIP>
+void SendSomeIP_getter()
+{
+    
+}
+
+/// <SendETHPacket>
+/// <SendETHPacket/SendSomeIP>
+void SendSomeIP_setter()
+{
+    
+}
+
+
 
 
 
 void MainTest ()
 {
-    ethernetPacket pkt;
-    long ret;
+    char sMAC_str[32]="20:00:00:00:00:01";
+    char dMAC_str[32]="FF:FF:FF:FF:FF:FF";
+    word vlanId=1;
+    char sIPv4_str[32]="192.168.0.1";
+    char dIPv4_str[32]="192.168.0.2";
+    dword sPort=30490;
+    dword dPort=30490;
+    dword MessageID=0x10010001;//Service ID+Method ID
+    dword RequestID=0x00010001;//Client ID+Session ID
+    byte MessageType=0;
+    byte date[2]={1,2};
     
-    
-    SetListenBus("Ethernet1");
-    
-    
-    write("start");
-    ret=TestWaitForEthernetPacket(IpGetAddressAsNumber("192.168.1.1"), IpGetAddressAsNumber("192.168.1.255"), 17, 0, 0, 0, 10000);
-    
-    write("ret=%d",ret);
-    if(ret==1)
-    {
-        write("Resume due to event occurred");
-        ret=testGetWaitEthernetPacketData(pkt);
-        if(ret==0)
-        {
-            write("Data access successful");
-        }
-    }
-    
+    SendSomeIP_RRMethod(sMAC_str,dMAC_str,vlanId,sIPv4_str,dIPv4_str,sPort,dPort,MessageID,RequestID,MessageType,date);
     
     
 }
