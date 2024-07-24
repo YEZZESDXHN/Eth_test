@@ -47,9 +47,12 @@ long SetListenBus(char listen_bus[])
 
 
 /// <GetEthPacket>
-long TestWaitForEth_ETH(char bus[], ethernetPacket* pkt,qword sMAC, qword dMAC, word vlanID, word etherType,dword flags, dword aTimeout)
+long TestWaitForEth_ETH(char bus[], ethernetPacket* pkt,char sMAC_str[], char dMAC_str[], word vlanID, word etherType,dword flags, dword aTimeout)
 {
     long ret;
+    qword sMAC,dMAC;
+    sMAC=EthGetMacAddressAsNumber(sMAC_str);
+    dMAC=EthGetMacAddressAsNumber(dMAC_str);
     SetListenBus(bus);
     
     ret=TestWaitForEthernetPacket(sMAC,dMAC,vlanID,etherType,flags,aTimeout);
@@ -84,6 +87,46 @@ long TestWaitForEth_ETH(char bus[], ethernetPacket* pkt,qword sMAC, qword dMAC, 
         testStepFail("get ETH Packet failed");
         return 0;
     }
+    
+}
+
+/// <GetEthPacket>
+long TestWaitForEth_ETH_Switch_Mode(char bus[], byte dir, ethernetPacket* pkt,char sMAC_str[], char dMAC_str[], word vlanID, word etherType,dword flags, dword aTimeout)
+{
+    long ret;
+    
+    ret=TestWaitForEth_ETH(bus, pkt,sMAC_str, dMAC_str, vlanID, etherType,flags, aTimeout);
+    
+    if(ret)
+    {
+        if(pkt.dir==dir)
+        {
+            return 1;
+        }
+    }
+    else
+    {
+        return 0;
+    }
+    
+    
+    ret=TestWaitForEth_ETH(bus, pkt,sMAC_str, dMAC_str, vlanID, etherType,flags, aTimeout);
+    if(ret)
+    {
+        if(pkt.dir==dir)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    else
+    {
+        return 0;
+    }
+    return 0;
     
 }
 
@@ -127,6 +170,45 @@ long TestWaitForEth_IPv4(char bus[], ethernetPacket* pkt,char sIPv4_str[], char 
         testStepFail("get ETH Packet failed");
         return 0;
     }
+    
+}
+/// <GetEthPacket>
+long TestWaitForEth_IPv4_Switch_Mode(char bus[], byte dir, ethernetPacket* pkt,char sIPv4_str[], char dIPv4_str[], dword protocol, dword sPort, dword dPort, dword flags, dword aTimeout)
+{
+    long ret;
+    
+    ret=TestWaitForEth_IPv4(bus, pkt,sIPv4_str, dIPv4_str, protocol, sPort, dPort, flags, aTimeout);
+    
+    if(ret)
+    {
+        if(pkt.dir==dir)
+        {
+            return 1;
+        }
+    }
+    else
+    {
+        return 0;
+    }
+    
+    
+    ret=TestWaitForEth_IPv4(bus, pkt,sIPv4_str, dIPv4_str, protocol, sPort, dPort, flags, aTimeout);
+    if(ret)
+    {
+        if(pkt.dir==dir)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    else
+    {
+        return 0;
+    }
+    return 0;
     
 }
 
@@ -175,6 +257,46 @@ long TestWaitForEth_TCP_IPv4(char bus[], ethernetPacket* pkt,char sIPv4_str[], c
 }
 
 /// <GetEthPacket>
+long TestWaitForEth_TCP_IPv4_Switch_Mode(char bus[], byte dir, ethernetPacket* pkt,char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort, dword flags, dword aTimeout)
+{
+    long ret;
+    
+    ret=TestWaitForEth_TCP_IPv4(bus, pkt,sIPv4_str, dIPv4_str, sPort, dPort, flags, aTimeout);
+    
+    if(ret)
+    {
+        if(pkt.dir==dir)
+        {
+            return 1;
+        }
+    }
+    else
+    {
+        return 0;
+    }
+    
+    
+    ret=TestWaitForEth_TCP_IPv4(bus, pkt,sIPv4_str, dIPv4_str, sPort, dPort, flags, aTimeout);
+    if(ret)
+    {
+        if(pkt.dir==dir)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    else
+    {
+        return 0;
+    }
+    return 0;
+    
+}
+
+/// <GetEthPacket>
 long TestWaitForEth_UDP_IPv4(char bus[], ethernetPacket* pkt,char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort, dword flags, dword aTimeout)
 {
     long ret;
@@ -216,6 +338,53 @@ long TestWaitForEth_UDP_IPv4(char bus[], ethernetPacket* pkt,char sIPv4_str[], c
         return 0;
     }
     
+}
+
+/// <GetEthPacket>
+long TestWaitForEth_UDP_IPv4_Switch_Mode(char bus[],
+    ethernetPacket* pkt,
+    byte dir,
+    char sIPv4_str[],
+    char dIPv4_str[],
+    dword sPort,
+    dword dPort,
+    dword flags,
+    dword aTimeout)
+{
+    long ret;
+    
+    ret=TestWaitForEth_UDP_IPv4(bus,pkt,sIPv4_str,dIPv4_str,sPort,dPort,flags,aTimeout);
+    
+    if(ret)
+    {
+        if(pkt.dir==dir)
+        {
+            return 1;
+        }
+    }
+    else
+    {
+        return 0;
+    }
+    
+    
+    ret=TestWaitForEth_UDP_IPv4(bus,pkt,sIPv4_str,dIPv4_str,sPort,dPort,flags,aTimeout);
+    if(ret)
+    {
+        if(pkt.dir==dir)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    else
+    {
+        return 0;
+    }
+    return 0;
 }
 
 /// <GetEthPacket>
@@ -277,12 +446,56 @@ long TestWaitForEth_IPv6(char bus[], ethernetPacket* pkt,char sIPv6_str[], char 
     
 }
 
+/// <GetEthPacket>
+long TestWaitForEth_IPv6_Switch_Mode(char bus[], byte dir, ethernetPacket* pkt,char sIPv6_str[], char dIPv6_str[], dword protocol, dword sPort, dword dPort, dword flags, dword aTimeout)
+{
+    long ret;
+    
+    ret=TestWaitForEth_IPv6(bus, pkt,sIPv6_str, dIPv6_str, protocol, sPort, dPort, flags, aTimeout);
+    
+    if(ret)
+    {
+        if(pkt.dir==dir)
+        {
+            return 1;
+        }
+    }
+    else
+    {
+        return 0;
+    }
+    
+    
+    ret=TestWaitForEth_IPv6(bus, pkt,sIPv6_str, dIPv6_str, protocol, sPort, dPort, flags, aTimeout);
+    if(ret)
+    {
+        if(pkt.dir==dir)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    else
+    {
+        return 0;
+    }
+    return 0;
+    
+}
+
 
 /// <GetEthPacket>
-long TestWaitForEth_ETH_IPv4(char bus[], ethernetPacket* pkt,qword sMAC, qword dMAC, word vlanID, word etherType, char sIPv4_str[], char dIPv4_str[], dword protocol, dword sPort, dword dPort, dword flags, dword aTimeout)
+long TestWaitForEth_ETH_IPv4(char bus[], ethernetPacket* pkt,char sMAC_str[], char dMAC_str[], word vlanID, word etherType, char sIPv4_str[], char dIPv4_str[], dword protocol, dword sPort, dword dPort, dword flags, dword aTimeout)
 {
     long ret;
     dword result;
+    qword sMAC,dMAC;
+    sMAC=EthGetMacAddressAsNumber(sMAC_str);
+    dMAC=EthGetMacAddressAsNumber(dMAC_str);
+    
     SetListenBus(bus);
     
     
@@ -322,11 +535,57 @@ long TestWaitForEth_ETH_IPv4(char bus[], ethernetPacket* pkt,qword sMAC, qword d
 }
 
 /// <GetEthPacket>
-long TestWaitForEth_ETH_IPv6(char bus[], ethernetPacket* pkt,qword sMAC, qword dMAC, word vlanID, word etherType, char sIPv6_str[], char dIPv6_str[], dword protocol, dword sPort, dword dPort, dword flags, dword aTimeout)
+long TestWaitForEth_ETH_IPv4_Switch_Mode(char bus[], byte dir, ethernetPacket* pkt,char sMAC_str[], char dMAC_str[], word vlanID, word etherType, char sIPv4_str[], char dIPv4_str[], dword protocol, dword sPort, dword dPort, dword flags, dword aTimeout)
+{
+    long ret;
+    
+    ret=TestWaitForEth_ETH_IPv4(bus, pkt,sMAC_str, dMAC_str, vlanID, etherType, sIPv4_str, dIPv4_str, protocol, sPort, dPort, flags, aTimeout);
+    
+    if(ret)
+    {
+        if(pkt.dir==dir)
+        {
+            return 1;
+        }
+    }
+    else
+    {
+        return 0;
+    }
+    
+    
+    ret=TestWaitForEth_ETH_IPv4(bus, pkt,sMAC_str, dMAC_str, vlanID, etherType, sIPv4_str, dIPv4_str, protocol, sPort, dPort, flags, aTimeout);
+    if(ret)
+    {
+        if(pkt.dir==dir)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    else
+    {
+        return 0;
+    }
+    return 0;
+    
+}
+
+
+/// <GetEthPacket>
+long TestWaitForEth_ETH_IPv6(char bus[], ethernetPacket* pkt,char sMAC_str[], char dMAC_str[], word vlanID, word etherType, char sIPv6_str[], char dIPv6_str[], dword protocol, dword sPort, dword dPort, dword flags, dword aTimeout)
 {
     long ret;
     dword result;
     byte sIPv6[16], dIPv6[16];
+    
+    qword sMAC,dMAC;
+    sMAC=EthGetMacAddressAsNumber(sMAC_str);
+    dMAC=EthGetMacAddressAsNumber(dMAC_str);
+    
     SetListenBus(bus);
     
     result = IpGetAddressAsArray( sIPv6_str, sIPv6);
@@ -378,7 +637,45 @@ long TestWaitForEth_ETH_IPv6(char bus[], ethernetPacket* pkt,qword sMAC, qword d
     
 }
 
-
+/// <GetEthPacket>
+long TestWaitForEth_ETH_IPv6_Switch_Mode(char bus[], byte dir, ethernetPacket* pkt,char sMAC_str[], char dMAC_str[], word vlanID, word etherType, char sIPv6_str[], char dIPv6_str[], dword protocol, dword sPort, dword dPort, dword flags, dword aTimeout)
+{
+    long ret;
+    
+    ret=TestWaitForEth_ETH_IPv6(bus, pkt,sMAC_str, dMAC_str, vlanID, etherType, sIPv6_str, dIPv6_str, protocol, sPort, dPort, flags, aTimeout);
+    
+    if(ret)
+    {
+        if(pkt.dir==dir)
+        {
+            return 1;
+        }
+    }
+    else
+    {
+        return 0;
+    }
+    
+    
+    ret=TestWaitForEth_ETH_IPv6(bus, pkt,sMAC_str, dMAC_str, vlanID, etherType, sIPv6_str, dIPv6_str, protocol, sPort, dPort, flags, aTimeout);
+    if(ret)
+    {
+        if(pkt.dir==dir)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    else
+    {
+        return 0;
+    }
+    return 0;
+    
+}
 
 /// <SendETHPacket>
 /// <SendETHPacket/SendARP>
@@ -644,16 +941,7 @@ void SendUDP(
 
 /// <SendETHPacket>
 /// <SendETHPacket/SendSomeIP>
-void SendSomeIP_FFMethod()
-{
-    ethernetPacket pkt;
-    pkt.udp.Init();
-    
-}
-
-/// <SendETHPacket>
-/// <SendETHPacket/SendSomeIP>
-void SendSomeIP_RRMethod(
+void SendSomeIP_Request_No_Return(
     char sMAC_str[],
     char dMAC_str[],
     word vlanId,//0xffff:不设置vlan
@@ -661,7 +949,7 @@ void SendSomeIP_RRMethod(
     char dIPv4_str[], 
     dword sPort, 
     dword dPort,
-    dword MessageID,//Service ID+Method ID
+    dword MessageID,//Service ID+Method ID,Method ID其中0 – 32767 为方法（包括 Method，Field.Getter 以及 Field.Setter），32768 – 65535 为事件（包括 Event 和 Field.Notify)
     dword RequestID,//Client ID+Session ID
     byte MessageType,
     byte payload[])
@@ -690,7 +978,79 @@ void SendSomeIP_RRMethod(
     
     someip_header[12]=1;//Protocol Version
     someip_header[13]=1;//Interface Version
-    someip_header[14]=MessageType;
+    someip_header[14]=1;//REQUEST (0x00)
+    someip_header[15]=0;//只在REPONSE和ERROR中用到，其他Message Type不生效，填0
+    
+    
+    
+    
+    pkt.someip.Init();
+    pkt.source=EthGetMacAddressAsNumber(sMAC_str);
+    pkt.destination=EthGetMacAddressAsNumber(dMAC_str);
+    if(vlanId==0xffff)
+    {
+        
+    }
+    else
+    {
+        pkt.SetVlanId(vlanId);
+    }
+    
+    pkt.ipv4.source=IpGetAddressAsNumber(sIPv4_str);
+    pkt.ipv4.destination=IpGetAddressAsNumber(dIPv4_str);
+    
+    pkt.udp.source=sPort;
+    pkt.udp.destination=dPort;
+    
+    pkt.udp.SetData(someip_header,16);
+    pkt.udp.SetData(16,payload,payload_len);//someip payload
+    
+    
+    pkt.CompletePacket();
+    output( pkt );
+    
+}
+
+/// <SendETHPacket>
+/// <SendETHPacket/SendSomeIP>
+void SendSomeIP_Request(
+    char sMAC_str[],
+    char dMAC_str[],
+    word vlanId,//0xffff:不设置vlan
+    char sIPv4_str[], 
+    char dIPv4_str[], 
+    dword sPort, 
+    dword dPort,
+    dword MessageID,////Service ID+Method ID,Method ID其中0 – 32767 为方法（包括 Method，Field.Getter 以及 Field.Setter），32768 – 65535 为事件（包括 Event 和 Field.Notify)
+    dword RequestID,//Client ID+Session ID
+    byte MessageType,
+    byte payload[])
+{
+    ethernetPacket pkt;
+    byte someip_header[16];
+    dword payload_len;
+    
+    payload_len=elCount(payload);
+    
+    
+    someip_header[0]=(MessageID>>24) & 0xff;
+    someip_header[1]=(MessageID>>16) & 0xff;
+    someip_header[2]=(MessageID>>8) & 0xff;
+    someip_header[3]=(MessageID   ) & 0xff;
+    
+    someip_header[4]=((payload_len+8)>>24) & 0xff;
+    someip_header[5]=((payload_len+8)>>16) & 0xff;
+    someip_header[6]=((payload_len+8)>>8) & 0xff;
+    someip_header[7]=((payload_len+8)   ) & 0xff;
+    
+    someip_header[8]=(RequestID>>24) & 0xff;
+    someip_header[9]=(RequestID>>16) & 0xff;
+    someip_header[10]=(RequestID>>8) & 0xff;
+    someip_header[11]=(RequestID   ) & 0xff;
+    
+    someip_header[12]=1;//Protocol Version
+    someip_header[13]=1;//Interface Version
+    someip_header[14]=0;//REQUEST (0x00)
     someip_header[15]=0;//只在REPONSE和ERROR中用到，其他Message Type不生效，填0
     
     
@@ -724,24 +1084,197 @@ void SendSomeIP_RRMethod(
 
 /// <SendETHPacket>
 /// <SendETHPacket/SendSomeIP>
-void SendSomeIP_Field()
+void SendSomeIP_Notification(
+    char sMAC_str[],
+    char dMAC_str[],
+    word vlanId,//0xffff:不设置vlan
+    char sIPv4_str[], 
+    char dIPv4_str[], 
+    dword sPort, 
+    dword dPort,
+    dword MessageID,////Service ID+Method ID,Method ID其中0 – 32767 为方法（包括 Method，Field.Getter 以及 Field.Setter），32768 – 65535 为事件（包括 Event 和 Field.Notify)
+    dword RequestID,//Client ID+Session ID
+    byte MessageType,
+    byte payload[])
 {
+    ethernetPacket pkt;
+    byte someip_header[16];
+    dword payload_len;
     
+    payload_len=elCount(payload);
+    
+    
+    someip_header[0]=(MessageID>>24) & 0xff;
+    someip_header[1]=(MessageID>>16) & 0xff;
+    someip_header[2]=(MessageID>>8) & 0xff;
+    someip_header[3]=(MessageID   ) & 0xff;
+    
+    someip_header[4]=((payload_len+8)>>24) & 0xff;
+    someip_header[5]=((payload_len+8)>>16) & 0xff;
+    someip_header[6]=((payload_len+8)>>8) & 0xff;
+    someip_header[7]=((payload_len+8)   ) & 0xff;
+    
+    someip_header[8]=(RequestID>>24) & 0xff;
+    someip_header[9]=(RequestID>>16) & 0xff;
+    someip_header[10]=(RequestID>>8) & 0xff;
+    someip_header[11]=(RequestID   ) & 0xff;
+    
+    someip_header[12]=1;//Protocol Version
+    someip_header[13]=1;//Interface Version
+    someip_header[14]=2;//NOTIFICATION (0x02)
+    someip_header[15]=0;//只在REPONSE和ERROR中用到，其他Message Type不生效，填0
+    
+    
+    
+    
+    pkt.someip.Init();
+    pkt.source=EthGetMacAddressAsNumber(sMAC_str);
+    pkt.destination=EthGetMacAddressAsNumber(dMAC_str);
+    if(vlanId==0xffff)
+    {
+        
+    }
+    else
+    {
+        pkt.SetVlanId(vlanId);
+    }
+    
+    pkt.ipv4.source=IpGetAddressAsNumber(sIPv4_str);
+    pkt.ipv4.destination=IpGetAddressAsNumber(dIPv4_str);
+    
+    pkt.udp.source=sPort;
+    pkt.udp.destination=dPort;
+    
+    pkt.udp.SetData(someip_header,16);
+    pkt.udp.SetData(16,payload,payload_len);//someip payload
+    
+    
+    pkt.CompletePacket();
+    output( pkt );
 }
 
 /// <SendETHPacket>
 /// <SendETHPacket/SendSomeIP>
-void SendSomeIP_getter()
+void SendSomeIP_Reponse(
+    char sMAC_str[],
+    char dMAC_str[],
+    word vlanId,//0xffff:不设置vlan
+    char sIPv4_str[], 
+    char dIPv4_str[], 
+    dword sPort, 
+    dword dPort,
+    dword MessageID,////Service ID+Method ID,Method ID其中0 – 32767 为方法（包括 Method，Field.Getter 以及 Field.Setter），32768 – 65535 为事件（包括 Event 和 Field.Notify)
+    dword RequestID,//Client ID+Session ID
+    byte MessageType,
+    byte payload[])
 {
+    ethernetPacket pkt;
+    byte someip_header[16];
+    dword payload_len;
     
+    payload_len=elCount(payload);
+    
+    
+    someip_header[0]=(MessageID>>24) & 0xff;
+    someip_header[1]=(MessageID>>16) & 0xff;
+    someip_header[2]=(MessageID>>8) & 0xff;
+    someip_header[3]=(MessageID   ) & 0xff;
+    
+    someip_header[4]=((payload_len+8)>>24) & 0xff;
+    someip_header[5]=((payload_len+8)>>16) & 0xff;
+    someip_header[6]=((payload_len+8)>>8) & 0xff;
+    someip_header[7]=((payload_len+8)   ) & 0xff;
+    
+    someip_header[8]=(RequestID>>24) & 0xff;
+    someip_header[9]=(RequestID>>16) & 0xff;
+    someip_header[10]=(RequestID>>8) & 0xff;
+    someip_header[11]=(RequestID   ) & 0xff;
+    
+    someip_header[12]=1;//Protocol Version
+    someip_header[13]=1;//Interface Version
+    someip_header[14]=0x80;//REPONSE (0x80)
+    someip_header[15]=1;//只在REPONSE和ERROR中用到，其他Message Type不生效，填0
+    
+    
+    
+    
+    pkt.someip.Init();
+    pkt.source=EthGetMacAddressAsNumber(sMAC_str);
+    pkt.destination=EthGetMacAddressAsNumber(dMAC_str);
+    if(vlanId==0xffff)
+    {
+        
+    }
+    else
+    {
+        pkt.SetVlanId(vlanId);
+    }
+    
+    pkt.ipv4.source=IpGetAddressAsNumber(sIPv4_str);
+    pkt.ipv4.destination=IpGetAddressAsNumber(dIPv4_str);
+    
+    pkt.udp.source=sPort;
+    pkt.udp.destination=dPort;
+    
+    pkt.udp.SetData(someip_header,16);
+    pkt.udp.SetData(16,payload,payload_len);//someip payload
+    
+    
+    pkt.CompletePacket();
+    output( pkt );
 }
 
-/// <SendETHPacket>
-/// <SendETHPacket/SendSomeIP>
-void SendSomeIP_setter()
-{
-    
-}
+///// <SendETHPacket>
+///// <SendETHPacket/SendSomeIP>
+//void SendSomeIP_SD_Offer(
+//    char sMAC_str[],
+//    char dMAC_str[],
+//    word vlanId,//0xffff:不设置vlan
+//    char sIPv4_str[], 
+//    char dIPv4_str[], 
+//    dword sPort, 
+//    dword dPort,
+//    dword MessageID,////Service ID+Method ID,Method ID其中0 – 32767 为方法（包括 Method，Field.Getter 以及 Field.Setter），32768 – 65535 为事件（包括 Event 和 Field.Notify)
+//    dword RequestID,//Client ID+Session ID
+//    byte MessageType,
+//    byte payload[])
+//{
+//    ethernetPacket pkt;
+//    byte someipsd_header[16];
+//    dword payload_len;
+//    
+//    payload_len=elCount(payload);
+//    
+//    //Message ID：固定值 0xFFFF8100
+//    someipsd_header[0]=0xff;
+//    someipsd_header[1]=0xff;
+//    someipsd_header[2]=0x81;
+//    someipsd_header[3]=0x00;
+//    
+//    //Client ID：固定值 0x0000
+//    someipsd_header[4]=0x00;
+//    someipsd_header[5]=0x00;
+//    someipsd_header[6]=0x00;
+//    someipsd_header[7]=0x00;
+//    
+//    //Protocol Version：固定值 0x01
+//    someipsd_header[8]=0x01;
+//    
+//    //Interface Version：固定值 0x01
+//    someipsd_header[9]=0x01;
+//    //Message Type：固定值 0x02（ NOTIFICATION ）
+//    someipsd_header[10]=0x02;
+//    //Return Code：固定值 0x00
+//    someipsd_header[11]=0x00;
+//    
+//    //flags
+//    
+//    someipsd_header[12]=0x60;
+//    
+//    
+//    
+//    
+//}
 
 
 
@@ -761,7 +1294,7 @@ void MainTest ()
     byte MessageType=0;
     byte date[2]={1,2};
     
-    SendSomeIP_RRMethod(sMAC_str,dMAC_str,vlanId,sIPv4_str,dIPv4_str,sPort,dPort,MessageID,RequestID,MessageType,date);
+    SendSomeIP_Request(sMAC_str,dMAC_str,vlanId,sIPv4_str,dIPv4_str,sPort,dPort,MessageID,RequestID,MessageType,date);
     
     
 }
