@@ -1276,7 +1276,86 @@ void SendSomeIP_Reponse(
 //    
 //}
 
+testfunction Check_SomeIP_Message_Cycle(char bus[], byte dir, word cycle,float tolerance,char sMAC_str[], char dMAC_str[], word vlanID, char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort, dword flags, dword aTimeout)
+{
+    int count;
+    int index;
+    dword ret;
+    
+    ethernetPacket pkt;
+    const dword protocol=17;//UDP
+    const word etherType=0x0800;//IPv4
+    
+    int64 time_start,time_stop,dtime;
+    
+    
+    
+//    teststep("","start check someip cycle");
+    
+    TestWaitForEth_ETH_IPv4_Switch_Mode(bus, dir, pkt,sMAC_str, dMAC_str, vlanID, etherType, sIPv4_str, dIPv4_str, protocol, sPort, dPort, flags, aTimeout);
+    
+    time_start=pkt.time_ns;
+    
+    for(index=0;index<200;index++)
+    {
+        ret=TestWaitForEth_ETH_IPv4_Switch_Mode(bus, dir, pkt,sMAC_str, dMAC_str, vlanID, etherType, sIPv4_str, dIPv4_str, protocol, sPort, dPort, flags, aTimeout);
+        
+        if(ret==1)
+        {
+            time_stop=pkt.time_ns;
+            dtime=time_stop-time_start;
+            if(dtime>(cycle*(1-tolerance))*1000000 && dtime<(cycle*(1+tolerance))*1000000)
+            {
+                //pass
+            }
+            else
+            {
+                testStepFail("","cycle error,cycle:%lld",dtime);
+                count=count+1;
+            }
+        }
+        else
+        {
+            
+            testStepFail("","timeout");
+            count=count+1;
+        }
+        time_start=time_stop;
+    }
+    
+    if(count>5)
+    {
+        testStepFail("","failed,count=%d",count);
+    }
+    else
+    {
+        testStepPass("","passed,count=%d",count);
+    }
+}
 
+testcase Check_01f0_Cycle1()
+{
+    char bus[32]="EthernetCluster38_1";
+    byte dir=1;
+    char sMAC_str[32]="02:df:53:00:00:10";
+    char dMAC_str[32]="02:df:53:00:00:00";
+    word vlanID=11;
+    char sIPv4_str[32]="172.16.111.50";
+    char dIPv4_str[32]="172.16.111.10";
+    dword sPort=56000;
+    dword dPort=56000;
+    dword flags=0;
+    dword aTimeout=200;
+    word cycle=100;
+    float tolerance=0.1;
+    
+//    @S32G_M_010F::sub_key_010F=1;
+    
+    testWaitForTimeout(1000);
+    
+    testStep("","start check message 0x01f0");
+    Check_SomeIP_Message_Cycle(bus, dir, cycle,tolerance,sMAC_str, dMAC_str, vlanID, sIPv4_str, dIPv4_str, sPort, dPort, flags, aTimeout);
+}
 
 
 
