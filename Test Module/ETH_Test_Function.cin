@@ -1295,10 +1295,10 @@ testfunction Check_SomeIP_Message_Cycle(char bus[], byte dir, word cycle,float t
     
     if(count>5)
     {
-        testStepFail("","failed,count=%d",count);
+        testStepFail("","SomeIP message cycle is no ok,cycle error times:%d",count);
     }
     else
     {
-        testStepPass("","passed,count=%d",count);
+        testStepPass("","SomeIP message cycle is ok,cycle error times:%d",count);
     }
 }
