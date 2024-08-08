@@ -1,5 +1,101 @@
 /*@!Encoding:936*/
 
+variables
+{
+    struct eth_header
+    {
+        qword dMAC;
+        qword sMAC;
+        word vlanID;
+        word etherType;
+    };
+    
+    struct ipv4_header
+    {
+        char sIPv4Addr_str[16];
+        char dIPv4Addr_str[16];
+        dword protocol;
+        
+    };
+    
+    struct ipv6_header
+    {
+        char sIPv6Addr_str[40];
+        char dIPv6Addr_str[40];
+        dword protocol;
+    };
+    
+    struct SomeIP_header
+    {
+        word Service_ID;
+        word Method_ID;
+        
+        dword Length;
+        
+        word Client_ID;
+        word Session_ID;
+        
+        byte Protocol_Version;
+        byte Interface_Version;
+        byte Message_Type;
+        byte Return_Code;
+    };
+    
+    struct SomeIPSD_header
+    {
+        word Service_ID;
+        word Method_ID;
+        
+        dword Length;
+        
+        word Client_ID;
+        word Session_ID;
+        
+        byte Protocol_Version;
+        byte Interface_Version;
+        byte Message_Type;
+        byte Return_Code;
+        
+        byte flag;
+    };
+    
+    struct SomeIPSD_Entriy//16byte
+    {
+        byte type;
+        byte IndexFirstOptionRun;
+        byte IndexSecondOptionRun;
+        byte NumberofOptions_1_2;
+        word ServiceID;
+        word InstantID;
+        byte MajorVersion;
+        dword TTL;//3byte
+        dword MinorVersion;
+        
+    };
+    
+    struct SomeIPSD_IPv4_Option//16byte
+    {
+        word Length;
+        byte type;
+        byte Reserved1;
+        dword IPv4_Address;
+        byte Reserved2;
+        byte L4_Proto;
+        word Prot_Number;
+    };
+    
+    struct SomeIPSD_Entries_Array
+    {
+        dword Length_of_Entries_Array;
+        byte Entries_num;
+        struct SomeIPSD_Entriy Entries[4];
+        
+        byte Option_num;
+        struct SomeIPSD_IPv4_Option IPv4_Option[4];
+    };
+    
+}
+
 //设置再哪个总线，等待报文
 long SetListenBus(char listen_bus[])
 {
@@ -13,7 +109,117 @@ long SetListenBus(char listen_bus[])
 }
 
 
+/// <GetEthPacket>
+long TestWaitForSomeIP(char bus[], ethernetPacket* pkt,dword message_id,char sMAC_str[], char dMAC_str[], word vlanID, char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort, dword aTimeout)
+{
+    dword flags=0;
+    const dword protocol=17;//UDP
+    const word etherType=0x0800;//IPv4
+    long ret;
+    dword t1,t2;
+    struct SomeIP_header someip_header;
+    
+    t1=timeNow();
+    while(1)
+    {
+        ret=TestWaitForEth_ETH_IPv4(bus, pkt,sMAC_str, dMAC_str, vlanID, etherType, sIPv4_str, dIPv4_str, protocol, sPort, dPort, flags, aTimeout);
+        
+        if(ret==1)//获取到ETH
+        {
+            ret==get_someip_header(someip_header,pkt);
+        }
+        else
+        {
+            return -1;
+        }
+        
+        if(ret==1)//获取到SomeIP报头
+        {
+            if((someip_header.Service_ID<<16)+someip_header.Method_ID)
+            {
+                return 1;
+                
+            }
+            else
+            {
+                //不是期望someip报文
+                ret= -5;
+            }
+        }
+        else if(ret==-1)
+        {
+            //不是UDP报文
+            ret= -2;
+        }
+        else if(ret==0)
+        {
+            //SomeIPSD 报文
+            ret= -3;
+        }
+        else
+        {
+            ret= -4;
+        }
+        
+        t2=timeNow();
+        if((t2-t1)/100>aTimeout)
+        {
+            ret= -6;
+            return ret;
+        }
+        else
+        {
+            t1=t2;
+        }
+    }
+    return ret;
+}
 
+
+/// <GetEthPacket>
+long TestWaitForSomeIPSD(char bus[], ethernetPacket* pkt,char sMAC_str[], char dMAC_str[], word vlanID, char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort, dword aTimeout)
+{
+    dword flags=0;
+    const dword protocol=17;//UDP
+    const word etherType=0x0800;//IPv4
+    long ret;
+    dword t1,t2;
+    
+    t1=timeNow();
+    while(1)
+    {
+        ret=TestWaitForEth_ETH_IPv4(bus, pkt,sMAC_str, dMAC_str, vlanID, etherType, sIPv4_str, dIPv4_str, protocol, sPort, dPort, flags, aTimeout);
+        
+        if(ret==1)//获取到ETH
+        {
+            ret==Check_is_SomeIP_SD(pkt);
+            if(ret==1)//sd报文
+            {
+                return 1;
+            }
+            else
+            {
+                return -2;
+            }
+        }
+        else
+        {
+            return -1;
+        }
+        
+        t2=timeNow();
+        if((t2-t1)/100>aTimeout)
+        {
+            ret= -3;
+            return ret;
+        }
+        else
+        {
+            t1=t2;
+        }
+        
+    }
+}
 
 /// <GetEthPacket>
 long TestWaitForEth_ETH(char bus[], ethernetPacket* pkt,char sMAC_str[], char dMAC_str[], word vlanID, word etherType,dword flags, dword aTimeout)
@@ -48,7 +254,7 @@ long TestWaitForEth_ETH(char bus[], ethernetPacket* pkt,char sMAC_str[], char dM
     ret=testGetWaitEthernetPacketData(pkt);
     if(ret==0)
     {
-        testStepPass("get ETH Packet success");
+//        testStepPass("get ETH Packet success");
         return 1;
     }
     else
@@ -131,7 +337,7 @@ long TestWaitForEth_IPv4(char bus[], ethernetPacket* pkt,char sIPv4_str[], char 
     ret=testGetWaitEthernetPacketData(pkt);
     if(ret==0)
     {
-        testStepPass("get ETH Packet success");
+//        testStepPass("get ETH Packet success");
         return 1;
     }
     else
@@ -214,7 +420,7 @@ long TestWaitForEth_TCP_IPv4(char bus[], ethernetPacket* pkt,char sIPv4_str[], c
     ret=testGetWaitEthernetPacketData(pkt);
     if(ret==0)
     {
-        testStepPass("get ETH Packet success");
+//        testStepPass("get ETH Packet success");
         return 1;
     }
     else
@@ -298,7 +504,7 @@ long TestWaitForEth_UDP_IPv4(char bus[], ethernetPacket* pkt,char sIPv4_str[], c
     ret=testGetWaitEthernetPacketData(pkt);
     if(ret==0)
     {
-        testStepPass("get ETH Packet success");
+//        testStepPass("get ETH Packet success");
         return 1;
     }
     else
@@ -404,7 +610,7 @@ long TestWaitForEth_IPv6(char bus[], ethernetPacket* pkt,char sIPv6_str[], char 
     ret=testGetWaitEthernetPacketData(pkt);
     if(ret==0)
     {
-        testStepPass("get ETH Packet success");
+//        testStepPass("get ETH Packet success");
         return 1;
     }
     else
@@ -492,7 +698,7 @@ long TestWaitForEth_ETH_IPv4(char bus[], ethernetPacket* pkt,char sMAC_str[], ch
     ret=testGetWaitEthernetPacketData(pkt);
     if(ret==0)
     {
-        testStepPass("get ETH Packet success");
+//        testStepPass("get ETH Packet success");
         return 1;
     }
     else
@@ -595,7 +801,7 @@ long TestWaitForEth_ETH_IPv6(char bus[], ethernetPacket* pkt,char sMAC_str[], ch
     ret=testGetWaitEthernetPacketData(pkt);
     if(ret==0)
     {
-        testStepPass("get ETH Packet success");
+//        testStepPass("get ETH Packet success");
         return 1;
     }
     else
@@ -710,6 +916,39 @@ void SendICMPv4_EchoRequest(
     
     output( pkt );
 }
+
+/// <SendETHPacket/SendICMP>
+//void SendICMPv4_EchoRequest_Data(
+//    char sMAC_str[],
+//    char dMAC_str[],
+//    word vlanId,
+//    char sIPv4_str[],
+//    char dIPv4_str[],
+//    byte data[])
+//{
+//    ethernetPacket pkt;
+//    pkt.icmpv4.Init();
+////    pkt.type=0x0806;//arp
+//    pkt.source=EthGetMacAddressAsNumber(sMAC_str);
+//    pkt.destination=EthGetMacAddressAsNumber(dMAC_str);
+//    if(vlanId==0xffff)
+//    {
+//        
+//    }
+//    else
+//    {
+//        pkt.SetVlanId(vlanId);
+//    }
+//    pkt.ipv4.source=IpGetAddressAsNumber(sIPv4_str);
+//    pkt.ipv4.destination=IpGetAddressAsNumber(dIPv4_str);
+//    pkt.icmpv4.type=0x08;
+//    
+//    pkt.icmpv4.SetData(0,data,elCount(data));
+//    
+//    pkt.CompletePacket();
+//    
+//    output( pkt );
+//}
 
 
 /// <SendETHPacket>
@@ -1246,7 +1485,9 @@ void SendSomeIP_Reponse(
 //}
 
 
-testfunction Check_SomeIP_Message_Cycle(char bus[], byte dir, word cycle,float tolerance,char sMAC_str[], char dMAC_str[], word vlanID, char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort, dword flags, dword aTimeout)
+
+/// <CheckCycle>
+testfunction Check_ETH_IPv4_UDP_Message_Cycle(char bus[], word cycle,dword cycle_times,float tolerance,char sMAC_str[], char dMAC_str[], word vlanID, char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort, dword flags, dword aTimeout)
 {
     int count;
     int index;
@@ -1260,15 +1501,15 @@ testfunction Check_SomeIP_Message_Cycle(char bus[], byte dir, word cycle,float t
     
     
     
-//    teststep("","start check someip cycle");
+    teststep("","start check ETH message cycle,sMAC:%s,dMAC:%s,sIPv4:%s,dIPv4:%s",sMAC_str,dMAC_str,sIPv4_str,dIPv4_str);
     
-    TestWaitForEth_ETH_IPv4_Switch_Mode(bus, dir, pkt,sMAC_str, dMAC_str, vlanID, etherType, sIPv4_str, dIPv4_str, protocol, sPort, dPort, flags, aTimeout);
+    TestWaitForEth_ETH_IPv4(bus, pkt,sMAC_str, dMAC_str, vlanID, etherType, sIPv4_str, dIPv4_str, protocol, sPort, dPort, flags, aTimeout);
     
     time_start=pkt.time_ns;
     
-    for(index=0;index<200;index++)
+    for(index=0;index<cycle_times;index++)
     {
-        ret=TestWaitForEth_ETH_IPv4_Switch_Mode(bus, dir, pkt,sMAC_str, dMAC_str, vlanID, etherType, sIPv4_str, dIPv4_str, protocol, sPort, dPort, flags, aTimeout);
+        ret=TestWaitForEth_ETH_IPv4(bus, pkt,sMAC_str, dMAC_str, vlanID, etherType, sIPv4_str, dIPv4_str, protocol, sPort, dPort, flags, aTimeout);
         
         if(ret==1)
         {
@@ -1287,18 +1528,1031 @@ testfunction Check_SomeIP_Message_Cycle(char bus[], byte dir, word cycle,float t
         else
         {
             
-            testStepFail("","timeout");
+            testStepFail("","timeout ret=%d",ret);
             count=count+1;
         }
         time_start=time_stop;
     }
     
-    if(count>5)
+    if(count>(int)(cycle_times*tolerance))
     {
-        testStepFail("","SomeIP message cycle is no ok,cycle error times:%d",count);
+        testStepFail("","IPv4 UDP message cycle is no ok,check %d message,cycle error times:%d",cycle_times,count);
     }
     else
     {
-        testStepPass("","SomeIP message cycle is ok,cycle error times:%d",count);
+        testStepPass("","IPv4 UDP message cycle is ok,check %d message,cycle error times:%d",cycle_times,count);
     }
 }
+
+
+
+
+
+
+
+
+///// <SomeIP>
+//testfunction Check_SomeIP_Message_Cycle(char bus[], word cycle,dword cycle_times,float tolerance,char sMAC_str[], char dMAC_str[], word vlanID, char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort, dword aTimeout)
+//{
+//    dword flags=0;
+//    Check_ETH_IPv4_UDP_Message_Cycle(bus, cycle,cycle_times,tolerance,sMAC_str, dMAC_str, vlanID, sIPv4_str, dIPv4_str, sPort, dPort, flags, aTimeout);
+//}
+/// <SomeIP>
+testfunction Check_SomeIP_Message_Cycle(char bus[], word cycle,dword cycle_times,float tolerance,dword message_id,char sMAC_str[], char dMAC_str[], word vlanID, char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort, dword aTimeout)
+{
+    dword flags=0;
+    int count;
+    int index;
+    dword ret;
+    
+    ethernetPacket pkt;
+    const dword protocol=17;//UDP
+    const word etherType=0x0800;//IPv4
+    struct SomeIP_header someip_header;
+    
+    int64 time_start,time_stop,dtime;
+    
+    
+    
+    teststep("","start check someip message cycle,sMAC:%s,dMAC:%s,sIPv4:%s,dIPv4:%s,SomeIP Message ID:%X",sMAC_str,dMAC_str,sIPv4_str,dIPv4_str,message_id);
+    
+    
+    ret=TestWaitForSomeIP(bus,pkt, message_id,sMAC_str, dMAC_str, vlanID, sIPv4_str, dIPv4_str, sPort, dPort, aTimeout);
+    if(ret==1)
+    {
+        time_start=pkt.time_ns;
+    }
+    else
+    {
+        //no message
+    }
+    
+    for(index=0;index<cycle_times;index++)
+    {
+        ret=TestWaitForSomeIP(bus,pkt, message_id,sMAC_str, dMAC_str, vlanID, sIPv4_str, dIPv4_str, sPort, dPort, aTimeout);
+        
+        if(ret==1)
+        {
+            time_stop=pkt.time_ns;
+            dtime=time_stop-time_start;
+            if(dtime>(cycle*(1-tolerance))*1000000 && dtime<(cycle*(1+tolerance))*1000000)
+            {
+                //pass
+            }
+            else
+            {
+                testStepFail("","cycle error,cycle:%lld",dtime);
+                count=count+1;
+            }
+        }
+        else
+        {
+            
+            testStepFail("","timeout ret=%d",ret);
+            count=count+1;
+        }
+        time_start=time_stop;
+    }
+    
+    if(count>(int)(cycle_times*tolerance))
+    {
+        testStepFail("","IPv4 UDP message cycle is no ok,check %d message,cycle error times:%d",cycle_times,count);
+    }
+    else
+    {
+        testStepPass("","IPv4 UDP message cycle is ok,check %d message,cycle error times:%d",cycle_times,count);
+    }
+}
+
+/// <SomeIP>
+long get_someip_header(struct SomeIP_header someip_header,ethernetPacket *pkt)
+{
+    long ret;
+    byte header[16];
+    ret=pkt.udp.GetData(0,header,16);
+    if(ret==0)
+        return -1;//不是udp报文
+    someip_header.Service_ID=header[0]*0x100+header[1];
+    someip_header.Method_ID=header[2]*0x100+header[3];
+    
+    if(someip_header.Service_ID==0xffff && someip_header.Method_ID==0x8100)
+    {
+        return 0;//SomeIP SD报文
+    }
+    
+    someip_header.Length=header[4]*0x1000000+header[5]*0x10000+header[6]*0x100+header[7];
+    
+    someip_header.Client_ID=header[8]*0x100+header[9];
+    someip_header.Session_ID=header[10]*0x100+header[11];
+    
+    someip_header.Protocol_Version=header[12];
+    someip_header.Interface_Version=header[13];
+    someip_header.Message_Type=header[14];
+    someip_header.Return_Code=header[15];
+    
+    
+    return 1;
+}
+
+/// <SomeIPSD>
+long Check_is_SomeIP_SD(ethernetPacket *pkt)
+{
+    long ret;
+    byte header[16];
+    struct SomeIP_header someip_header;
+    ret=pkt.udp.GetData(0,header,16);
+    if(ret==0)
+        return -1;//不是udp报文
+    someip_header.Service_ID=header[0]*0x100+header[1];
+    someip_header.Method_ID=header[2]*0x100+header[3];
+    
+    if(someip_header.Service_ID==0xffff && someip_header.Method_ID==0x8100)
+    {
+//        return 0;//SomeIP SD报文
+        return 1;
+    }
+    else
+    {
+        return -2;//不是SD报文
+    }
+    
+    
+    
+    
+    
+}
+
+
+
+
+
+
+
+
+/// <SomeIP>
+testfunction Check_SomeIP_Message_SessionID(char bus[], dword check_times,dword message_id,dword first_session_id,char sMAC_str[], char dMAC_str[], word vlanID, char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort, dword aTimeout)
+{
+    dword flags=0;
+    int index;
+    int count;
+    dword ret;
+    
+    struct SomeIP_header someip_header;
+    ethernetPacket pkt;
+//    const dword protocol=17;//UDP
+//    const word etherType=0x0800;//IPv4
+    dword Pre_start_timeout=5000;
+    dword temp_session_id;
+    count=0;
+    teststep("","start check someip message SessionID,sMAC:%s,dMAC:%s,sIPv4:%s,dIPv4:%s",sMAC_str,dMAC_str,sIPv4_str,dIPv4_str);
+    
+//    TestWaitForEth_ETH_IPv4(bus, pkt, message_id,sMAC_str, dMAC_str, vlanID, etherType, sIPv4_str, dIPv4_str, protocol, sPort, dPort, flags, Pre_start_timeout);
+    TestWaitForSomeIP(bus,pkt, message_id,sMAC_str, dMAC_str, vlanID, sIPv4_str, dIPv4_str, sPort, dPort, Pre_start_timeout);
+    ret=get_someip_header(someip_header,pkt);
+    
+    if(ret==1)
+    {
+        if(first_session_id==0xffff)//不检查首帧
+        {
+            first_session_id=someip_header.Session_ID;
+            temp_session_id=first_session_id;
+            testStepPass("","首帧Session ID=%d",first_session_id);
+        }
+        else
+        {
+            if(first_session_id==someip_header.Session_ID)
+            {
+                testStepPass("","首帧Session ID符合预期，first_session_id=%d",first_session_id);
+                temp_session_id=first_session_id;
+            }
+            else
+            {
+                testStepFail("","首帧Session ID不符合预期，exp_first_session_id=%d,acyual_first_session_id=%d",first_session_id,someip_header.Session_ID);
+                temp_session_id=someip_header.Session_ID;
+            }
+        }
+        
+        
+    }
+    
+    
+    
+    for(index=0;index<check_times;index++)
+    {
+        ret=TestWaitForSomeIP(bus,pkt, message_id,sMAC_str, dMAC_str, vlanID, sIPv4_str, dIPv4_str, sPort, dPort, Pre_start_timeout);
+        if(ret==1)
+        {
+            get_someip_header(someip_header,pkt);
+            
+            
+            if(someip_header.Session_ID==temp_session_id+1)
+            {
+                //pass
+            }
+            else
+            {
+                count++;
+                testStepFail("","Session未按1递增，last session id=%d,now session id=%d",temp_session_id,someip_header.Session_ID);
+            }
+            temp_session_id=someip_header.Session_ID;
+        }
+        
+    }
+    if(count==0)
+    {
+        testStepPass("","Session ID 按1递增正常");
+    }
+    else
+    {
+        testStepFail("","Session ID未按1递增%d次",count);
+    }
+    
+}
+
+
+/// <SomeIP>
+testfunction Check_SomeIP_Message_header(char bus[],struct SomeIP_header exp_someip_header,dword message_id,char sMAC_str[], char dMAC_str[], word vlanID, char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort, dword aTimeout)
+{
+    dword flags=0;
+    int index;
+    int count;
+    dword ret;
+    
+    struct SomeIP_header someip_header;
+    ethernetPacket pkt;
+    const dword protocol=17;//UDP
+    const word etherType=0x0800;//IPv4
+    dword Pre_start_timeout=5000;
+    dword temp_session_id;
+    count=0;
+    teststep("","start check someip message header,sMAC:%s,dMAC:%s,sIPv4:%s,dIPv4:%s,message id:%X",sMAC_str,dMAC_str,sIPv4_str,dIPv4_str,message_id);
+    
+    TestWaitForSomeIP(bus,pkt, message_id,sMAC_str, dMAC_str, vlanID, sIPv4_str, dIPv4_str, sPort, dPort, Pre_start_timeout);
+    
+    ret=get_someip_header(someip_header,pkt);
+    
+    if(ret==1)
+    {
+        if(someip_header.Service_ID==exp_someip_header.Service_ID)
+        {
+            testStepPass("","Service_ID符合期望，Service_ID=%x",someip_header.Service_ID);
+        }
+        else
+        {
+            testStepFail("","Service_ID不符合期望，actual_Service_ID=%x,exp_Service_ID=%x",someip_header.Service_ID,exp_someip_header.Service_ID);
+        }
+        
+        if(someip_header.Method_ID==exp_someip_header.Method_ID)
+        {
+            testStepPass("","Method_ID符合期望，Method_ID=%x",someip_header.Method_ID);
+        }
+        else
+        {
+            testStepFail("","Method_ID不符合期望，actual_Method_ID=%x,exp_Method_ID=%x",someip_header.Method_ID,exp_someip_header.Method_ID);
+        }
+        
+        if(someip_header.Length==exp_someip_header.Length)
+        {
+            testStepPass("","Length符合期望，Length=%d",someip_header.Length);
+        }
+        else
+        {
+            testStepFail("","Length不符合期望，actual_Length=%d,exp_Length=%d",someip_header.Length,exp_someip_header.Length);
+        }
+        
+        if(someip_header.Client_ID==exp_someip_header.Client_ID)
+        {
+            testStepPass("","Client_ID符合期望，Client_ID=%x",someip_header.Client_ID);
+        }
+        else
+        {
+            testStepFail("","Client_ID不符合期望，actual_Client_ID=%x,exp_Client_ID=%x",someip_header.Client_ID,exp_someip_header.Client_ID);
+        }
+        
+        if(someip_header.Message_Type==exp_someip_header.Message_Type)
+        {
+            testStepPass("","Message_Type符合期望，Message_Type=%x",someip_header.Message_Type);
+        }
+        else
+        {
+            testStepFail("","Message_Type不符合期望，actual_Message_Type=%x,exp_Message_Type=%x",someip_header.Message_Type,exp_someip_header.Message_Type);
+        }
+        
+        if(someip_header.Return_Code==exp_someip_header.Return_Code)
+        {
+            testStepPass("","Return_Code符合期望，Return_Code=%x",someip_header.Return_Code);
+        }
+        else
+        {
+            testStepFail("","Return_Code不符合期望，actual_Return_Code=%x,exp_Return_Code=%x",someip_header.Return_Code,exp_someip_header.Return_Code);
+        }
+        
+        
+    }
+    else
+    {
+        testStepFail("","未接收到SomeIP报文：%x",message_id);
+    }
+    
+    
+    
+    
+    
+}
+
+///// <SomeIP>
+//testfunction Check_SomeIPSD_Message_header(char bus[],struct SomeIPSD_header exp_someipsd_header,char sMAC_str[], char dMAC_str[], word vlanID, char sIPv4_str[], char dIPv4_str[], dword sPort, dword dPort, dword aTimeout)
+//{
+//    dword flags=0;
+//    int index;
+//    int count;
+//    dword ret;
+//    
+//    struct SomeIP_header someip_header;
+//    ethernetPacket pkt;
+//    const dword protocol=17;//UDP
+//    const word etherType=0x0800;//IPv4
+//    dword Pre_start_timeout=5000;
+//    dword temp_session_id;
+//    count=0;
+//    teststep("","start check someip message header,sMAC:%s,dMAC:%s,sIPv4:%s,dIPv4:%s",sMAC_str,dMAC_str,sIPv4_str,dIPv4_str);
+//    
+//    TestWaitForEth_ETH_IPv4(bus, pkt,sMAC_str, dMAC_str, vlanID, etherType, sIPv4_str, dIPv4_str, protocol, sPort, dPort, flags, Pre_start_timeout);
+//    
+//    ret=get_someip_header(someip_header,pkt);
+//    
+//    if(ret==1)
+//    {
+//        if(someip_header.Service_ID==exp_someip_header.Service_ID)
+//        {
+//            testStepPass("","Service_ID符合期望，Service_ID=%x",someip_header.Service_ID);
+//        }
+//        else
+//        {
+//            testStepFail("","Service_ID不符合期望，actual_Service_ID=%x,exp_Service_ID=%x",someip_header.Service_ID,exp_someip_header.Service_ID);
+//        }
+//        
+//        if(someip_header.Method_ID==exp_someip_header.Method_ID)
+//        {
+//            testStepPass("","Method_ID符合期望，Method_ID=%x",someip_header.Method_ID);
+//        }
+//        else
+//        {
+//            testStepFail("","Method_ID不符合期望，actual_Method_ID=%x,exp_Method_ID=%x",someip_header.Method_ID,exp_someip_header.Method_ID);
+//        }
+//        
+//        if(someip_header.Length==exp_someip_header.Length)
+//        {
+//            testStepPass("","Length符合期望，Length=%d",someip_header.Length);
+//        }
+//        else
+//        {
+//            testStepFail("","Length不符合期望，actual_Length=%d,exp_Length=%d",someip_header.Length,exp_someip_header.Length);
+//        }
+//        
+//        if(someip_header.Client_ID==exp_someip_header.Client_ID)
+//        {
+//            testStepPass("","Client_ID符合期望，Client_ID=%x",someip_header.Client_ID);
+//        }
+//        else
+//        {
+//            testStepFail("","Client_ID不符合期望，actual_Client_ID=%x,exp_Client_ID=%x",someip_header.Client_ID,exp_someip_header.Client_ID);
+//        }
+//        
+//        if(someip_header.Message_Type==exp_someip_header.Message_Type)
+//        {
+//            testStepPass("","Message_Type符合期望，Message_Type=%x",someip_header.Message_Type);
+//        }
+//        else
+//        {
+//            testStepFail("","Message_Type不符合期望，actual_Message_Type=%x,exp_Message_Type=%x",someip_header.Message_Type,exp_someip_header.Message_Type);
+//        }
+//        
+//        if(someip_header.Return_Code==exp_someip_header.Return_Code)
+//        {
+//            testStepPass("","Return_Code符合期望，Return_Code=%x",someip_header.Return_Code);
+//        }
+//        else
+//        {
+//            testStepFail("","Return_Code不符合期望，actual_Return_Code=%x,exp_Return_Code=%x",someip_header.Return_Code,exp_someip_header.Return_Code);
+//        }
+//        
+//        
+//    }
+//    
+//    
+//    
+//    
+//    
+//}
+
+
+/// <TC8/Data_Link_Layer/以太网端口主从模式测试>
+testfunction Data_Link_Layer_01()
+{
+    
+}
+
+
+/// <TC8/Data_Link_Layer/以太网报文格式测试>
+// DUT报文发送
+testfunction Data_Link_Layer_02_1(char bus[],dword check_message_count,char DUT_MAC_str[])
+{
+    long ret;
+    ethernetPacket pkt;
+    dword aTimeout=500;
+    teststep("","检查 DUT 发送的以太网报文是否带有802.1Q 标签，报文类型为0x8100");
+    while(check_message_count)
+    {
+        ret=TestWaitForEth_ETH(bus,pkt,DUT_MAC_str, "0", 0, 0,0, aTimeout);
+        if(ret==1)
+        {
+            dword Ethertype;
+            Ethertype=pkt.type;
+            if(Ethertype==0x8100)
+            {
+                testStepPass("","DUT 发送的以太网报文不带有802.1Q 标签");
+                
+            }
+            else
+            {
+                testStepFail("","DUT 发送的以太网报文不带有802.1Q 标签,Ethertype=%x,time:%d",Ethertype,timeNow());
+                
+                break;
+            }
+        }
+        check_message_count--;
+    }
+    
+    
+}
+
+
+/// <TC8/Data_Link_Layer/以太网报文格式测试>
+// DUT报文接收（不带 VLAN）
+testfunction Data_Link_Layer_02_2(
+    char bus[],
+    char tester_MAC_str[],
+    char DUT_MAC_str[],
+    char tester_IPv4_str[],
+    char DUT_IPv4_str[])
+{
+    long ret;
+    ethernetPacket pkt;
+    word etherType=0x0800;//ipv4
+    dword aTimeout=5000;
+    int i;
+    teststep("","向 DUT 发送 ICMPv4 Echo 请求报文");
+    SendICMPv4_EchoRequest(
+    tester_MAC_str,
+    DUT_MAC_str,
+    0xffff,//不带 VLAN
+    tester_IPv4_str,
+    DUT_IPv4_str);
+    
+    testStep("","监测 DUT 是否发送 ICMPv4 Echo 响应报文");
+    
+    for(i=0;i<100;i++)
+    {
+        ret=TestWaitForEth_ETH_IPv4(
+        bus,
+        pkt,
+        DUT_MAC_str,
+        tester_MAC_str,
+        0,
+        etherType,
+        DUT_IPv4_str,
+        tester_IPv4_str,
+        0,
+        0,
+        0,
+        0,
+        aTimeout/100);
+    
+    
+        if(ret==1)
+        {
+            if(pkt.ipv4.protocol==1)
+            {
+                if(pkt.icmpv4.type==0)
+                {
+                    testStepFail("","DUT 发送 ICMPv4 Echo 响应报文,i=%d",i);
+                    break;
+                }
+            }
+            
+        }
+    }
+    testStepPass("","DUT 未发送 ICMPv4 Echo 响应报文,i=%d",i);
+    
+}
+
+/// <TC8/Data_Link_Layer/以太网报文格式测试>
+// DUT报文接收（带 VLAN）
+testfunction Data_Link_Layer_02_3(
+    char bus[],
+    char tester_MAC_str[],
+    char DUT_MAC_str[],
+    word vlanId,
+    char tester_IPv4_str[],
+    char DUT_IPv4_str[])
+{
+    long ret;
+    ethernetPacket pkt;
+    word etherType=0x0800;//ipv4
+    dword aTimeout=5000;
+    int i;
+    teststep("","向 DUT 发送 ICMPv4 Echo 请求报文");
+    SendICMPv4_EchoRequest(
+    tester_MAC_str,
+    DUT_MAC_str,
+    vlanId,
+    tester_IPv4_str,
+    DUT_IPv4_str);
+    
+    testStep("","监测 DUT 是否发送 ICMPv4 Echo 响应报文");
+    
+    for(i=0;i<100;i++)
+    {
+        ret=TestWaitForEth_ETH_IPv4(
+        bus,
+        pkt,
+        DUT_MAC_str,
+        tester_MAC_str,
+        vlanId,
+        etherType,
+        DUT_IPv4_str,
+        tester_IPv4_str,
+        0,
+        0,
+        0,
+        0,
+        aTimeout/100);
+    
+    
+        if(ret==1)
+        {
+            if(pkt.ipv4.protocol==1)
+            {
+                if(pkt.icmpv4.type==0)
+                {
+                    testStepPass("","DUT 发送 ICMPv4 Echo 响应报文,i=%d",i);
+                    break;
+                }
+                
+            }
+            
+        }
+        else
+        {
+            testStepFail("","DUT 未发送 ICMPv4 Echo 响应报文,ret=%d",ret);
+        }
+    }
+}
+
+/// <TC8/Data_Link_Layer/MAC 地址测试>
+// 单播 MAC 地址
+testfunction Data_Link_Layer_03_1(
+    char bus[],
+    char tester_MAC_str[],
+    char DUT_MAC_str[],
+    word vlanId,
+    char tester_IPv4_str[],
+    char DUT_IPv4_str[])
+{
+    long ret;
+    ethernetPacket pkt;
+    word etherType=0x0800;//ipv4
+    dword aTimeout=5000;
+    int i;
+    teststep("","向 DUT 发送 ICMPv4 Echo 请求报文");
+    SendICMPv4_EchoRequest(
+    tester_MAC_str,
+    DUT_MAC_str,
+    vlanId,
+    tester_IPv4_str,
+    DUT_IPv4_str);
+    
+    testStep("","监测 DUT 是否发送 ICMPv4 Echo 响应报文");
+    
+    for(i=0;i<100;i++)
+    {
+        ret=TestWaitForEth_ETH_IPv4(
+        bus,
+        pkt,
+        DUT_MAC_str,
+        tester_MAC_str,
+        vlanId,
+        etherType,
+        DUT_IPv4_str,
+        tester_IPv4_str,
+        0,
+        0,
+        0,
+        0,
+        aTimeout/100);
+    
+    
+        if(ret==1)
+        {
+            if(pkt.ipv4.protocol==1)
+            {
+                if(pkt.icmpv4.type==0)
+                {
+                    testStepPass("","DUT 发送 ICMPv4 Echo 响应报文,i=%d",i);
+                    break;
+                }
+                
+            }
+            
+        }
+        else
+        {
+            testStepFail("","DUT 未发送 ICMPv4 Echo 响应报文,ret=%d",ret);
+        }
+    }
+}
+
+/// <TC8/Data_Link_Layer/MAC 地址测试>
+// 组播 MAC 地址
+testfunction Data_Link_Layer_03_2()
+{
+    
+}
+
+/// <TC8/Data_Link_Layer/MAC 帧类型测试>
+//有效 MAC 帧类型（带 VLAN 标签）
+testfunction Data_Link_Layer_04_1(
+    char bus[],
+    char tester_MAC_str[],
+    char DUT_MAC_str[],
+    word vlanId,
+    char tester_IPv4_str[],
+    char DUT_IPv4_str[])
+{
+    long ret;
+    ethernetPacket pkt;
+    word etherType=0x0800;//ipv4
+    dword aTimeout=5000;
+    int i;
+    teststep("","向 DUT 发送 ICMPv4 Echo 请求报文");
+    SendICMPv4_EchoRequest(
+    tester_MAC_str,
+    DUT_MAC_str,
+    vlanId,
+    tester_IPv4_str,
+    DUT_IPv4_str);
+    
+    testStep("","监测 DUT 是否发送 ICMPv4 Echo 响应报文");
+    
+    for(i=0;i<100;i++)
+    {
+        ret=TestWaitForEth_ETH_IPv4(
+        bus,
+        pkt,
+        DUT_MAC_str,
+        tester_MAC_str,
+        vlanId,
+        etherType,
+        DUT_IPv4_str,
+        tester_IPv4_str,
+        0,
+        0,
+        0,
+        0,
+        aTimeout/100);
+    
+    
+        if(ret==1)
+        {
+            if(pkt.ipv4.protocol==1)
+            {
+                if(pkt.icmpv4.type==0)
+                {
+                    testStepPass("","DUT 发送 ICMPv4 Echo 响应报文,i=%d",i);
+                    break;
+                }
+                
+            }
+            
+        }
+        else
+        {
+            testStepFail("","DUT 未发送 ICMPv4 Echo 响应报文,ret=%d",ret);
+        }
+    }
+    
+    teststep("","向 DUT 发送 ARP 请求报文");
+    testWaitForTimeout(1000);
+    SendARPRequest_IPv4(tester_MAC_str,vlanId,tester_IPv4_str,DUT_IPv4_str);
+    testStep("","检测 DUT 是否发送 MAC 帧类型为 0x8100 的 ARP 响应报文");
+    
+    for(i=0;i<100;i++)
+    {
+        ret=TestWaitForEth_ETH(bus,pkt,DUT_MAC_str,tester_MAC_str,vlanId,0x0800,0,aTimeout/100);
+        if(ret==1)
+        {
+            if(pkt.arp.hwSourceAddr==EthGetMacAddressAsNumber(DUT_MAC_str))
+            {
+                testStepPass("","DUT 发送 MAC 帧类型为 0x8100 的 ARP 响应报文");
+                break;
+            }
+            else
+            {
+                char buffer[32];
+                ethGetMacAddressAsString( pkt.arp.hwSourceAddr, buffer, 32 );
+                testStepFail("","DUT 发送 MAC 帧类型为 0x8100 的 ARP 响应报文,但MAC地址不符合需求，mac:%s",buffer);
+                break;
+            }
+        }
+        else
+        {
+            testStepFail("","DUT 未发送 MAC 帧类型为 0x8100 的 ARP 响应报文");
+        }
+    }
+    
+}
+
+/// <TC8/Data_Link_Layer/MAC 帧类型测试>
+//有效 MAC 帧类型（不带 VLAN 标签）
+testfunction Data_Link_Layer_04_2(
+    char bus[],
+    char tester_MAC_str[],
+    char DUT_MAC_str[],
+    char tester_IPv4_str[],
+    char DUT_IPv4_str[])
+{
+    word vlanId;
+    long ret;
+    ethernetPacket pkt;
+    word etherType=0x0800;//ipv4
+    dword aTimeout=5000;
+    int i;
+    vlanId=0xffff;
+    teststep("","向 DUT 发送 ICMPv4 Echo 请求报文");
+    SendICMPv4_EchoRequest(
+    tester_MAC_str,
+    DUT_MAC_str,
+    vlanId,
+    tester_IPv4_str,
+    DUT_IPv4_str);
+    
+    testStep("","监测 DUT 是否发送 ICMPv4 Echo 响应报文");
+    
+    for(i=0;i<100;i++)
+    {
+        ret=TestWaitForEth_ETH_IPv4(
+        bus,
+        pkt,
+        DUT_MAC_str,
+        tester_MAC_str,
+        0,
+        etherType,
+        DUT_IPv4_str,
+        tester_IPv4_str,
+        0,
+        0,
+        0,
+        0,
+        aTimeout/100);
+    
+    
+        if(ret==1)
+        {
+            if(pkt.ipv4.protocol==1)
+            {
+                if(pkt.icmpv4.type==0)
+                {
+                    testStepPass("","DUT 发送 ICMPv4 Echo 响应报文,i=%d",i);
+                    break;
+                }
+                
+            }
+            
+        }
+        else
+        {
+            testStepFail("","DUT 未发送 ICMPv4 Echo 响应报文,ret=%d",ret);
+        }
+    }
+    
+    teststep("","向 DUT 发送 ARP 请求报文");
+    testWaitForTimeout(1000);
+    SendARPRequest_IPv4(tester_MAC_str,vlanId,tester_IPv4_str,DUT_IPv4_str);
+    testStep("","检测 DUT 是否发送 MAC 帧类型为 0x8100 的 ARP 响应报文");
+    
+    for(i=0;i<100;i++)
+    {
+        ret=TestWaitForEth_ETH(bus,pkt,DUT_MAC_str,tester_MAC_str,0,0x0800,0,aTimeout/100);
+        if(ret==1)
+        {
+            if(pkt.arp.hwSourceAddr==EthGetMacAddressAsNumber(DUT_MAC_str))
+            {
+                testStepPass("","DUT 发送 MAC 帧类型为 0x8100 的 ARP 响应报文");
+                break;
+            }
+            else
+            {
+                char buffer[32];
+                ethGetMacAddressAsString( pkt.arp.hwSourceAddr, buffer, 32 );
+                testStepFail("","DUT 发送 MAC 帧类型为 0x8100 的 ARP 响应报文,但MAC地址不符合需求，mac:%s",buffer);
+                break;
+            }
+        }
+        else
+        {
+            testStepFail("","DUT 未发送 MAC 帧类型为 0x8100 的 ARP 响应报文");
+        }
+    }
+    
+}
+
+/// <TC8/Data_Link_Layer/MAC 帧类型测试>
+//无效 MAC 帧类型
+testfunction Data_Link_Layer_04_3()
+{
+    
+}
+
+/// <TC8/Data_Link_Layer/MTU 测试>
+testfunction Data_Link_Layer_05()
+{
+    
+}
+
+/// <TC8/Data_Link_Layer/FCS 测试>
+//FCS 接收
+testfunction Data_Link_Layer_06_1()
+{
+    
+}
+
+/// <TC8/Data_Link_Layer/FCS 测试>
+//FCS 发送
+testfunction Data_Link_Layer_06_2()
+{
+    
+}
+
+/// <TC8/Data_Link_Layer/发送报文的 PCP,CFI 和 VID 参数测试>
+testfunction Data_Link_Layer_07()
+{
+    
+}
+
+/// <TC8/Data_Link_Layer/错误 VLAN ID 接收测试>
+testfunction Data_Link_Layer_08()
+{
+    
+}
+
+/// <TC8/Data_Link_Layer/双 VLAN 标记帧测试>
+//双 VLAN 标记帧接收
+testfunction Data_Link_Layer_09_1()
+{
+    
+}
+
+/// <TC8/Data_Link_Layer/双 VLAN 标记帧测试>
+//双 VLAN 标记帧发送
+testfunction Data_Link_Layer_09_2()
+{
+    
+}
+
+
+/// <TC8/IP_Layer/动态 ARP 条目数量测试>
+testfunction IP_Layer_01()
+{
+    
+}
+
+/// <TC8/IP_Layer/动态 ARP 条目超时时间测试>
+testfunction IP_Layer_02()
+{
+    
+}
+
+/// <TC8/IP_Layer/ARP 泛洪攻击测试>
+//触发泛洪攻击
+testfunction IP_Layer_03_1()
+{
+    
+}
+
+/// <TC8/IP_Layer/ARP 泛洪攻击测试>
+//未触发泛洪攻击
+testfunction IP_Layer_03_2()
+{
+    
+}
+
+/// <TC8/IP_Layer/IPv6 报文接收测试>
+testfunction IP_Layer_04()
+{
+    
+}
+
+/// <TC8/IP_Layer/TOS 字段测试>
+testfunction IP_Layer_05_1()
+{
+    
+}
+
+/// <TC8/IP_Layer/TOS 字段测试>
+testfunction IP_Layer_05_2()
+{
+    
+}
+
+/// <TC8/IP_Layer/TTL 测试>
+testfunction IP_Layer_06_1()
+{
+    
+}
+
+/// <TC8/IP_Layer/TTL 测试>
+testfunction IP_Layer_06_2()
+{
+    
+}
+
+/// <TC8/IP_Layer/IPv4 Option 选项测试>
+testfunction IP_Layer_07_1()
+{
+    
+}
+
+/// <TC8/IP_Layer/IPv4 Option 选项测试>
+testfunction IP_Layer_07_2()
+{
+    
+}
+
+
+
+/// <TC8/IP_Layer/IP 地址测试>
+//单播 IP 地址
+testfunction IP_Layer_08_1()
+{
+    
+}
+
+/// <TC8/IP_Layer/IP 地址测试>
+//组播 IP 地址
+testfunction IP_Layer_08_2()
+{
+    
+}
+
+
+
+/// <TC8/IP_Layer/IP 分片测试>
+testfunction IP_Layer_09()
+{
+    
+}
+
+/// <TC8/IP_Layer/ICMPv4 组播和广播测试>
+//组播
+testfunction IP_Layer_10_1()
+{
+    
+}
+
+/// <TC8/IP_Layer/ICMPv4 组播和广播测试>
+//广播
+testfunction IP_Layer_10_2()
+{
+    
+}
+
+/// <TC8/IP_Layer/ICMPv4 报文类型测试>
+//协议不可达
+testfunction IP_Layer_11_1()
+{
+    
+}
+
+/// <TC8/IP_Layer/ICMPv4 报文类型测试>
+//端口不可达
+testfunction IP_Layer_11_2()
+{
+    
+}
+
+/// <TC8/IP_Layer/ICMPv4 报文类型测试>
+//ICMPv4 Echo（请求）
+testfunction IP_Layer_11_3()
+{
+    
+}
+
+/// <TC8/IP_Layer/ICMPv4 报文类型测试>
+//ICMPv4 Echo（响应）
+testfunction IP_Layer_11_4()
+{
+    
+}
+
+

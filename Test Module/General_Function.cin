@@ -1,0 +1,133 @@
+/*@!Encoding:936*/
+
+
+//设置报告位置：\log\0612\AutoTest\fileName_Version_{MeasurementStart}
+void ConfigReportPathName(char rootpath[],char sub_file[],char fileName[],char Version[])
+{
+    char PathWithName[256],year[5],mouth[3],day[3],Hours[3],Minutes[3],Seconds[3];
+    long LocalTime[9];
+    getLocalTime(LocalTime);//getMeasurementStartTime(DataLong);
+    snprintf(year,elcount(year),"%.2d",LocalTime[5]+1900);
+    snprintf(mouth,elcount(mouth),"%.2d",LocalTime[4]+1);
+    snprintf(day,elcount(day),"%.2d",LocalTime[3]);
+    snprintf(Hours,elcount(Hours),"%.2d",LocalTime[2]);
+    snprintf(Minutes,elcount(Minutes),"%.2d",LocalTime[1]);
+    snprintf(Seconds,elcount(Seconds),"%.2d",LocalTime[0]);
+    strncat(PathWithName,rootpath,strlen(PathWithName)+strlen(rootpath)+1);
+    strncat(PathWithName,"\\",strlen(PathWithName)+strlen("\\")+1);
+    strncat(PathWithName,Version,strlen(PathWithName)+strlen(Version)+1);
+    strncat(PathWithName,"\\",strlen(PathWithName)+strlen("\\")+1);
+//    strncat(PathWithName,day,strlen(PathWithName)+strlen(day)+1);
+//    strncat(PathWithName,"\\",strlen(PathWithName)+strlen("\\")+1);
+//    strncat(PathWithName,Hours,strlen(PathWithName)+strlen(Hours)+1);
+//    strncat(PathWithName,Minutes,strlen(PathWithName)+strlen(Minutes)+1);
+//    strncat(PathWithName,"\\",strlen(PathWithName)+strlen("\\")+1);
+    if(strlen(sub_file)!=0)
+    {
+        strncat(PathWithName,sub_file,strlen(PathWithName)+strlen(sub_file)+1);
+        strncat(PathWithName,"\\",strlen(PathWithName)+strlen("\\")+1);
+    }
+    
+    
+    
+    strncat(PathWithName,fileName,strlen(PathWithName)+strlen(fileName)+1);
+    strncat(PathWithName,"_",strlen(PathWithName)+strlen("_")+1);
+    strncat(PathWithName,year,strlen(PathWithName)+strlen(year)+1);
+    strncat(PathWithName,mouth,strlen(PathWithName)+strlen(mouth)+1);
+    strncat(PathWithName,day,strlen(PathWithName)+strlen(day)+1);
+    strncat(PathWithName,Hours,strlen(PathWithName)+strlen(Hours)+1);
+    strncat(PathWithName,Minutes,strlen(PathWithName)+strlen(Minutes)+1);
+    strncat(PathWithName,Seconds,strlen(PathWithName)+strlen(Seconds)+1);
+//    strncat(PathWithName,Version,strlen(PathWithName)+strlen(Version)+1);
+//    strncat(PathWithName,"_{MeasurementStart}",strlen(PathWithName)+strlen("_{MeasurementStart}")+1);
+    //write("%s",PathWithName);
+    
+    TestReportFileName(PathWithName);
+}
+
+
+
+//"C:\\Workspace\\02 INEOS\\08 Test Output"
+void StartLoggingFunction(char strLoggingBlockName[],char rootpath[],char sub_file[],char fileName[],char Version[])
+{
+    char PathWithName[256],year[5],mouth[3],day[3],Hours[3],Minutes[3],Seconds[3];
+    long LocalTime[9];
+    
+    stopLogging(strLoggingBlockName);
+    
+    
+    getLocalTime(LocalTime);//getMeasurementStartTime(DataLong);
+    snprintf(year,elcount(year),"%.2d",LocalTime[5]+1900);
+    snprintf(mouth,elcount(mouth),"%.2d",LocalTime[4]+1);
+    snprintf(day,elcount(day),"%.2d",LocalTime[3]);
+    snprintf(Hours,elcount(Hours),"%.2d",LocalTime[2]);
+    snprintf(Minutes,elcount(Minutes),"%.2d",LocalTime[1]);
+    snprintf(Seconds,elcount(Seconds),"%.2d",LocalTime[0]);
+    snprintf(PathWithName,elcount(PathWithName),rootpath);
+    //strncat(PathWithName,"C:\\Workspace\\02 INEOS\\08 Test Output",strlen(PathWithName)+strlen("C:\\Workspace\\02 INEOS\\08 Test Output")+1);
+    strncat(PathWithName,"\\",strlen(PathWithName)+strlen("\\")+1);
+    strncat(PathWithName,Version,strlen(PathWithName)+strlen(Version)+1);
+    if(strlen(sub_file)!=0)
+    {
+        strncat(PathWithName,"\\",strlen(PathWithName)+strlen("\\")+1);
+        strncat(PathWithName,sub_file,strlen(PathWithName)+strlen(sub_file)+1);
+    }
+    strncat(PathWithName,"\\",strlen(PathWithName)+strlen("\\")+1);
+    strncat(PathWithName,fileName,strlen(PathWithName)+strlen(fileName)+1);
+    strncat(PathWithName,"_",strlen(PathWithName)+strlen("_")+1);
+    strncat(PathWithName,year,strlen(PathWithName)+strlen(year)+1);
+    strncat(PathWithName,mouth,strlen(PathWithName)+strlen(mouth)+1);
+    strncat(PathWithName,day,strlen(PathWithName)+strlen(day)+1);
+    strncat(PathWithName,Hours,strlen(PathWithName)+strlen(Hours)+1);
+    strncat(PathWithName,Minutes,strlen(PathWithName)+strlen(Minutes)+1);
+    strncat(PathWithName,Seconds,strlen(PathWithName)+strlen(Seconds)+1);
+    
+    setLogFileName(strLoggingBlockName,PathWithName);
+    startLogging(strLoggingBlockName);
+    //write("logging name:%s",PathWithName);
+}
+
+void StartLoggingFunction(char strLoggingBlockName[],char rootpath[],char sub_file[],char Version[])
+{
+    char fileName[64];
+    char PathWithName[256],year[5],mouth[3],day[3],Hours[3],Minutes[3],Seconds[3];
+    long LocalTime[9];
+    
+    
+    
+    testGetCurrentTestCaseTitle(fileName, elcount(fileName));
+    
+    stopLogging(strLoggingBlockName);
+    
+    
+    getLocalTime(LocalTime);//getMeasurementStartTime(DataLong);
+    snprintf(year,elcount(year),"%.2d",LocalTime[5]+1900);
+    snprintf(mouth,elcount(mouth),"%.2d",LocalTime[4]+1);
+    snprintf(day,elcount(day),"%.2d",LocalTime[3]);
+    snprintf(Hours,elcount(Hours),"%.2d",LocalTime[2]);
+    snprintf(Minutes,elcount(Minutes),"%.2d",LocalTime[1]);
+    snprintf(Seconds,elcount(Seconds),"%.2d",LocalTime[0]);
+    snprintf(PathWithName,elcount(PathWithName),rootpath);
+    //strncat(PathWithName,"C:\\Workspace\\02 INEOS\\08 Test Output",strlen(PathWithName)+strlen("C:\\Workspace\\02 INEOS\\08 Test Output")+1);
+    strncat(PathWithName,"\\",strlen(PathWithName)+strlen("\\")+1);
+    strncat(PathWithName,Version,strlen(PathWithName)+strlen(Version)+1);
+    
+    if(strlen(sub_file)!=0)
+    {
+        strncat(PathWithName,"\\",strlen(PathWithName)+strlen("\\")+1);
+        strncat(PathWithName,sub_file,strlen(PathWithName)+strlen(sub_file)+1);
+    }
+    strncat(PathWithName,"\\",strlen(PathWithName)+strlen("\\")+1);
+    strncat(PathWithName,fileName,strlen(PathWithName)+strlen(fileName)+1);
+    strncat(PathWithName,"_",strlen(PathWithName)+strlen("_")+1);
+    strncat(PathWithName,year,strlen(PathWithName)+strlen(year)+1);
+    strncat(PathWithName,mouth,strlen(PathWithName)+strlen(mouth)+1);
+    strncat(PathWithName,day,strlen(PathWithName)+strlen(day)+1);
+    strncat(PathWithName,Hours,strlen(PathWithName)+strlen(Hours)+1);
+    strncat(PathWithName,Minutes,strlen(PathWithName)+strlen(Minutes)+1);
+    strncat(PathWithName,Seconds,strlen(PathWithName)+strlen(Seconds)+1);
+    
+    setLogFileName(strLoggingBlockName,PathWithName);
+    startLogging(strLoggingBlockName);
+    //write("logging name:%s",PathWithName);
+}
