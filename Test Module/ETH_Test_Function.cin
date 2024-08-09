@@ -135,7 +135,7 @@ long TestWaitForSomeIP(char bus[], ethernetPacket* pkt,dword message_id,char sMA
         
         if(ret==1)//获取到SomeIP报头
         {
-            if((someip_header.Service_ID<<16)+someip_header.Method_ID)
+            if((someip_header.Service_ID<<16)+someip_header.Method_ID==message_id)
             {
                 return 1;
                 
